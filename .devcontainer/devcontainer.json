@@ -1,0 +1,8 @@
+{
+  "name": "Rugby League Pricing",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "vscode"
+}
