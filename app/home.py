@@ -9,17 +9,34 @@ from rugby_league_pricing.ratings.simple_tries_pred import (
     prepare_model_data,
 )
 
-DATA_PATH = Path("data/sample_results/slres_unstacked.csv")
-
 st.set_page_config(
     page_title="Rugby League Pricing",
     page_icon="🏉",
     layout="wide",
 )
 
+DATA_PATH = Path("data/sample_results/slres_unstacked.csv")
+
+
+@st.cache_data
+def get_results():
+    return load_results(DATA_PATH)
+
+
+@st.cache_resource
+def get_model(year: int):
+    results = get_results()
+    model_data = prepare_model_data(results, year)
+    return fit_poisson_model(model_data)
+
+
 st.title("🏉 Rugby League Match Predictor")
 
-results = load_results(DATA_PATH)
+try:
+    results = get_results()
+except Exception as exc:
+    st.error(f"Could not load results: {exc}")
+    st.stop()
 
 available_years = sorted(results["year"].unique(), reverse=True)
 
@@ -46,25 +63,32 @@ with col1:
 with col2:
     away_options = [team for team in teams if team != home_team]
 
+    default_away_index = (
+        away_options.index("St Helens")
+        if "St Helens" in away_options
+        else 0
+    )
+
     away_team = st.selectbox(
         "Away team",
         options=away_options,
-        index=(
-            away_options.index("St Helens")
-            if "St Helens" in away_options
-            else 0
-        ),
+        index=default_away_index,
     )
 
 if st.button("Generate prediction", type="primary"):
-    model_data = prepare_model_data(results, year)
-    model = fit_poisson_model(model_data)
+    try:
+        with st.spinner("Fitting model and generating prediction..."):
+            model = get_model(year)
 
-    prediction = predict_match(
-        model=model,
-        home_team=home_team,
-        away_team=away_team,
-    )
+            prediction = predict_match(
+                model=model,
+                home_team=home_team,
+                away_team=away_team,
+            )
+
+    except Exception as exc:
+        st.error(f"Prediction failed: {exc}")
+        st.stop()
 
     st.subheader(f"{home_team} vs {away_team}")
 
