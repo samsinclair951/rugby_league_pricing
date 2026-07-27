@@ -2,7 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.4.0]
+
+- sqllite db created
 
 ## [0.3.0] - App Super Lite
 
