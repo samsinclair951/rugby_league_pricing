@@ -1,0 +1,13 @@
+# Local databases
+data/*.db
+
+# Python cache
+__pycache__/
+*.py[cod]
+# Test and lint caches
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
