@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1] Upsert refactor
+
+- use upsert function for any upserting
+
 ## [1.4.0] Persist Expected Scores to DB
 
 - Persist expected scores to SQLite
