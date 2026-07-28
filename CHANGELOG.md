@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] Attack/Defence Strength Multipliers
+
+- first feature - form guide.
+- readme
+
 ## [1.0.0]
 
 - first feature - form guide.
