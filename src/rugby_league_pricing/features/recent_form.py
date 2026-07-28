@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Sequence
-from typing import Any
 
 import pandas as pd
+
+from rugby_league_pricing.utils.sql import upsert_dataframe
 
 RESULTS_SOURCE = "rugby_league_project"
 DEFAULT_WINDOWS = (5, 10)
@@ -146,50 +147,30 @@ def add_recent_form(
             raise ValueError(f"Rolling windows must be positive: {window}")
 
         recent_form[f"recent_points_for_{window}"] = grouped["points_for"].transform(
-            lambda values: (
-                values.shift(1)
-                .rolling(
-                    window=window,
-                    min_periods=1,
-                )
-                .mean()
+            lambda values, window=window: (
+                values.shift(1).rolling(window=window, min_periods=1).mean()
             )
         )
 
         recent_form[f"recent_points_against_{window}"] = grouped[
             "points_against"
         ].transform(
-            lambda values: (
-                values.shift(1)
-                .rolling(
-                    window=window,
-                    min_periods=1,
-                )
-                .mean()
+            lambda values, window=window: (
+                values.shift(1).rolling(window=window, min_periods=1).mean()
             )
         )
 
         recent_form[f"recent_margin_{window}"] = grouped["margin"].transform(
-            lambda values: (
-                values.shift(1)
-                .rolling(
-                    window=window,
-                    min_periods=1,
-                )
-                .mean()
+            lambda values, window=window: (
+                values.shift(1).rolling(window=window, min_periods=1).mean()
             )
         )
 
         recent_form[f"recent_games_used_{window}"] = (
             grouped["points_for"]
             .transform(
-                lambda values: (
-                    values.shift(1)
-                    .rolling(
-                        window=window,
-                        min_periods=1,
-                    )
-                    .count()
+                lambda values, window=window: (
+                    values.shift(1).rolling(window=window, min_periods=1).count()
                 )
             )
             .astype("Int64")
@@ -217,31 +198,7 @@ def build_recent_form(
     )
 
 
-def prepare_database_rows(
-    recent_form: pd.DataFrame,
-) -> list[dict[str, Any]]:
-    """Convert pandas values into values supported by SQLite."""
-    rows: list[dict[str, Any]] = []
-
-    for record in recent_form.to_dict(orient="records"):
-        prepared_record: dict[str, Any] = {}
-
-        for column, value in record.items():
-            if pd.isna(value):
-                prepared_record[column] = None
-            elif isinstance(value, pd.Timestamp):
-                prepared_record[column] = value.date().isoformat()
-            elif hasattr(value, "item"):
-                prepared_record[column] = value.item()
-            else:
-                prepared_record[column] = value
-
-        rows.append(prepared_record)
-
-    return rows
-
-
-def save_recent_form(
+def upsert_recent_form(
     connection: sqlite3.Connection,
     recent_form: pd.DataFrame,
 ) -> int:
@@ -262,86 +219,54 @@ def save_recent_form(
             f"Recent form is missing required windows: {sorted(missing_windows)}"
         )
 
-    rows = prepare_database_rows(
-        recent_form=recent_form,
+    columns = [
+        "fixture_id",
+        "team_id",
+        "opponent_id",
+        "is_home",
+        "match_date",
+        "season",
+        "points_for",
+        "points_against",
+        "margin",
+        "history_games_before",
+        "recent_points_for_5",
+        "recent_points_against_5",
+        "recent_margin_5",
+        "recent_games_used_5",
+        "recent_points_for_10",
+        "recent_points_against_10",
+        "recent_margin_10",
+        "recent_games_used_10",
+    ]
+
+    missing_columns = set(columns).difference(recent_form.columns)
+
+    if missing_columns:
+        raise ValueError(
+            f"Recent form is missing required columns: {sorted(missing_columns)}"
+        )
+
+    duplicate_rows = recent_form.duplicated(subset=["fixture_id", "team_id"])
+
+    if duplicate_rows.any():
+        duplicates = recent_form.loc[
+            duplicate_rows,
+            ["fixture_id", "team_id"],
+        ].to_dict(orient="records")
+
+        raise ValueError(
+            f"Recent form contains duplicate fixture/team rows: {duplicates}"
+        )
+
+    return upsert_dataframe(
+        connection=connection,
+        dataframe=recent_form,
+        table_name="recent_form",
+        columns=columns,
+        conflict_columns=["fixture_id", "team_id"],
+        update_timestamp=True,
     )
-
-    sql = """
-        INSERT INTO recent_form (
-            fixture_id,
-            team_id,
-            opponent_id,
-            is_home,
-            match_date,
-            season,
-            points_for,
-            points_against,
-            margin,
-            history_games_before,
-            recent_points_for_5,
-            recent_points_against_5,
-            recent_margin_5,
-            recent_games_used_5,
-            recent_points_for_10,
-            recent_points_against_10,
-            recent_margin_10,
-            recent_games_used_10
-        )
-        VALUES (
-            :fixture_id,
-            :team_id,
-            :opponent_id,
-            :is_home,
-            :match_date,
-            :season,
-            :points_for,
-            :points_against,
-            :margin,
-            :history_games_before,
-            :recent_points_for_5,
-            :recent_points_against_5,
-            :recent_margin_5,
-            :recent_games_used_5,
-            :recent_points_for_10,
-            :recent_points_against_10,
-            :recent_margin_10,
-            :recent_games_used_10
-        )
-        ON CONFLICT (
-            fixture_id,
-            team_id
-        )
-        DO UPDATE SET
-            opponent_id = excluded.opponent_id,
-            is_home = excluded.is_home,
-            match_date = excluded.match_date,
-            season = excluded.season,
-            points_for = excluded.points_for,
-            points_against = excluded.points_against,
-            margin = excluded.margin,
-            history_games_before = excluded.history_games_before,
-            recent_points_for_5 = excluded.recent_points_for_5,
-            recent_points_against_5 =
-                excluded.recent_points_against_5,
-            recent_margin_5 = excluded.recent_margin_5,
-            recent_games_used_5 =
-                excluded.recent_games_used_5,
-            recent_points_for_10 =
-                excluded.recent_points_for_10,
-            recent_points_against_10 =
-                excluded.recent_points_against_10,
-            recent_margin_10 = excluded.recent_margin_10,
-            recent_games_used_10 =
-                excluded.recent_games_used_10,
-            updated_at = CURRENT_TIMESTAMP
-    """
-
-    connection.executemany(
-        sql,
-        rows,
-    )
-
-    return len(rows)
 
 
 def rebuild_recent_form(
@@ -351,8 +276,7 @@ def rebuild_recent_form(
     recent_form = build_recent_form(
         connection=connection,
     )
-
-    return save_recent_form(
+    return upsert_recent_form(
         connection=connection,
         recent_form=recent_form,
     )

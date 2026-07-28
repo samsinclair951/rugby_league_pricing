@@ -4,10 +4,10 @@ import sqlite3
 
 import pandas as pd
 
-from rugby_league_pricing.features.expected_scores import save_expected_scores
+from rugby_league_pricing.features.expected_scores import upsert_expected_scores
 
 
-def test_save_expected_scores_round_trip() -> None:
+def test_upsert_expected_scores_round_trip() -> None:
     """Expected scores should be saved to SQLite correctly."""
     connection = sqlite3.connect(":memory:")
 
@@ -65,7 +65,7 @@ def test_save_expected_scores_round_trip() -> None:
             }
         )
 
-        rows_saved = save_expected_scores(
+        rows_saved = upsert_expected_scores(
             connection=connection,
             expected_scores=expected_scores,
         )

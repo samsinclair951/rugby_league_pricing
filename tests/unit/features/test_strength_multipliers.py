@@ -5,11 +5,11 @@ import sqlite3
 import pandas as pd
 
 from rugby_league_pricing.features.strength_multipliers import (
-    save_strength_multipliers,
+    upsert_strength_multipliers,
 )
 
 
-def test_save_strength_multipliers_round_trip() -> None:
+def test_upsert_strength_multipliers_round_trip() -> None:
     """Strength multipliers should be saved to SQLite correctly."""
     connection = sqlite3.connect(":memory:")
 
@@ -59,7 +59,7 @@ def test_save_strength_multipliers_round_trip() -> None:
             }
         )
 
-        rows_saved = save_strength_multipliers(
+        rows_saved = upsert_strength_multipliers(
             connection=connection,
             strength_multipliers=strength_multipliers,
         )
