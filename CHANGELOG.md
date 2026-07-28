@@ -4,8 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.1.0] Attack/Defence Strength Multipliers
 
-- first feature - form guide.
-- readme
+- opponent-adjusted strength multipliers
 
 ## [1.0.0]
 
