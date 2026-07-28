@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
+import sqlite3
+
 import pandas as pd
+
+from rugby_league_pricing.features.scoring_factors import (
+    calculate_historical_scoring_factors,
+)
+
 
 REQUIRED_STRENGTH_COLUMNS = {
     "fixture_id",
@@ -180,3 +187,223 @@ def calculate_expected_scores(
     )
 
     return expected_scores[EXPECTED_SCORE_COLUMNS]
+
+
+def prepare_database_rows(
+    expected_scores: pd.DataFrame,
+    columns: list[str],
+) -> list[tuple[object, ...]]:
+    """Convert expected-score rows into SQLite-compatible values."""
+    rows: list[tuple[object, ...]] = []
+
+    for row in expected_scores[columns].itertuples(index=False, name=None):
+        prepared_row: list[object] = []
+
+        for value in row:
+            if pd.isna(value):
+                prepared_row.append(None)
+            elif isinstance(value, pd.Timestamp):
+                prepared_row.append(value.date().isoformat())
+            elif hasattr(value, "item"):
+                prepared_row.append(value.item())
+            else:
+                prepared_row.append(value)
+
+        rows.append(tuple(prepared_row))
+
+    return rows
+
+
+def save_expected_scores(
+    connection: sqlite3.Connection,
+    expected_scores: pd.DataFrame,
+) -> int:
+    """Save expected scores to the database."""
+    required_columns = [
+        "fixture_id",
+        "match_date",
+        "season",
+        "home_team_id",
+        "away_team_id",
+        "league_average_points",
+        "home_scoring_factor",
+        "away_scoring_factor",
+        "home_attack_multiplier",
+        "home_defence_multiplier",
+        "away_attack_multiplier",
+        "away_defence_multiplier",
+        "expected_home_score",
+        "expected_away_score",
+        "expected_margin",
+        "expected_total",
+    ]
+
+    missing = set(required_columns) - set(expected_scores.columns)
+    if missing:
+        raise ValueError(f"Expected scores missing required columns: {sorted(missing)}")
+
+    rows = prepare_database_rows(
+        expected_scores=expected_scores,
+        columns=required_columns,
+    )
+
+    placeholders = ", ".join("?" for _ in required_columns)
+    updates = ", ".join(
+        f"{column}=excluded.{column}" for column in required_columns[1:]
+    )
+
+    connection.executemany(
+        f"""
+        INSERT INTO expected_scores (
+            {", ".join(required_columns)}
+        )
+        VALUES ({placeholders})
+        ON CONFLICT (fixture_id)
+        DO UPDATE SET
+            {updates},
+            updated_at = CURRENT_TIMESTAMP
+        """,
+        rows,
+    )
+
+    connection.commit()
+
+    return len(rows)
+
+
+def build_expected_scores(
+    connection: sqlite3.Connection,
+) -> pd.DataFrame:
+    """Build database-ready expected scores for completed fixtures."""
+    strength_multipliers = pd.read_sql_query(
+        """
+        SELECT
+            fixture_id,
+            match_date,
+            season,
+            team_id,
+            is_home,
+            attack_multiplier,
+            defence_multiplier
+        FROM strength_multipliers
+        ORDER BY match_date, fixture_id, is_home DESC
+        """,
+        connection,
+        parse_dates=["match_date"],
+    )
+
+    home_strength = strength_multipliers.loc[
+        strength_multipliers["is_home"] == 1
+    ].rename(
+        columns={
+            "team_id": "home_team_id",
+            "attack_multiplier": "home_attack_multiplier",
+            "defence_multiplier": "home_defence_multiplier",
+        }
+    )[
+        [
+            "fixture_id",
+            "match_date",
+            "season",
+            "home_team_id",
+            "home_attack_multiplier",
+            "home_defence_multiplier",
+        ]
+    ]
+
+    away_strength = strength_multipliers.loc[
+        strength_multipliers["is_home"] == 0
+    ].rename(
+        columns={
+            "team_id": "away_team_id",
+            "attack_multiplier": "away_attack_multiplier",
+            "defence_multiplier": "away_defence_multiplier",
+        }
+    )[
+        [
+            "fixture_id",
+            "away_team_id",
+            "away_attack_multiplier",
+            "away_defence_multiplier",
+        ]
+    ]
+
+    strength_features = home_strength.merge(
+        away_strength,
+        on="fixture_id",
+        how="inner",
+        validate="one_to_one",
+    )
+
+    results = pd.read_sql_query(
+        """
+        SELECT
+            fixture_id,
+            match_date,
+            home_score AS home_points,
+            away_score AS away_points
+        FROM results
+        ORDER BY match_date, fixture_id
+        """,
+        connection,
+        parse_dates=["match_date"],
+    )
+
+    scoring_factors = calculate_historical_scoring_factors(
+        results=results,
+    )
+
+    scoring_factors = scoring_factors.dropna(
+        subset=[
+            "league_average_points",
+            "home_scoring_factor",
+            "away_scoring_factor",
+        ]
+    )
+
+    strength_features = strength_features[
+        strength_features["fixture_id"].isin(scoring_factors["fixture_id"])
+    ].copy()
+
+    calculated_scores = calculate_expected_scores(
+        strength_multipliers=strength_features,
+        scoring_factors=scoring_factors,
+    )
+
+    expected_scores = (
+        strength_features.merge(
+            scoring_factors,
+            on="fixture_id",
+            how="inner",
+            validate="one_to_one",
+        )
+        .merge(
+            calculated_scores,
+            on="fixture_id",
+            how="inner",
+            validate="one_to_one",
+        )
+        .rename(
+            columns={
+                "expected_home_points": "expected_home_score",
+                "expected_away_points": "expected_away_score",
+                "expected_total_points": "expected_total",
+            }
+        )
+    )
+
+    return expected_scores
+
+
+def rebuild_expected_scores(
+    connection: sqlite3.Connection,
+) -> int:
+    """Build and persist expected scores."""
+    expected_scores = build_expected_scores(
+        connection=connection,
+    )
+
+    return save_expected_scores(
+        connection=connection,
+        expected_scores=expected_scores,
+    )

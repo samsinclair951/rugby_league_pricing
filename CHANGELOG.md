@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] Persist Expected Scores to DB
+
+- Persist expected scores to SQLite
+
 ## [1.3.0] Strength Multipliers
 
 - Persist strength multipliers to SQLite

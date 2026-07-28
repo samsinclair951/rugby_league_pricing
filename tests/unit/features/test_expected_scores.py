@@ -1,158 +1,118 @@
 """Tests for expected-score calculations."""
 
+import sqlite3
+
 import pandas as pd
-import pytest
 
-from rugby_league_pricing.features.expected_scores import (
-    calculate_expected_scores,
-)
+from rugby_league_pricing.features.expected_scores import save_expected_scores
 
 
-def test_calculates_expected_scores() -> None:
-    """Expected scores should correctly combine all model features."""
-    strength_multipliers = pd.DataFrame(
-        [
-            {
-                "fixture_id": "2026-01-15_1_2",
-                "home_attack_multiplier": 1.20,
-                "home_defence_multiplier": 0.80,
-                "away_attack_multiplier": 0.90,
-                "away_defence_multiplier": 1.10,
-            }
-        ]
-    )
+def test_save_expected_scores_round_trip() -> None:
+    """Expected scores should be saved to SQLite correctly."""
+    connection = sqlite3.connect(":memory:")
 
-    scoring_factors = pd.DataFrame(
-        [
-            {
-                "fixture_id": "2026-01-15_1_2",
-                "league_average_points": 20.0,
-                "home_scoring_factor": 1.10,
-                "away_scoring_factor": 0.90,
-            }
-        ]
-    )
+    try:
+        connection.execute(
+            """
+            CREATE TABLE expected_scores (
+                expected_score_id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-    expected_scores = calculate_expected_scores(
-        strength_multipliers=strength_multipliers,
-        scoring_factors=scoring_factors,
-    )
+                fixture_id TEXT NOT NULL UNIQUE,
+                match_date TEXT NOT NULL,
+                season INTEGER NOT NULL,
 
-    result = expected_scores.iloc[0]
+                home_team_id INTEGER NOT NULL,
+                away_team_id INTEGER NOT NULL,
 
-    # Home: 20 × 1.20 × 1.10 × 1.10 = 29.04
-    assert result["expected_home_points"] == pytest.approx(29.04)
+                league_average_points REAL NOT NULL,
+                home_scoring_factor REAL NOT NULL,
+                away_scoring_factor REAL NOT NULL,
 
-    # Away: 20 × 0.90 × 0.80 × 0.90 = 12.96
-    assert result["expected_away_points"] == pytest.approx(12.96)
+                home_attack_multiplier REAL NOT NULL,
+                home_defence_multiplier REAL NOT NULL,
+                away_attack_multiplier REAL NOT NULL,
+                away_defence_multiplier REAL NOT NULL,
 
-    assert result["expected_margin"] == pytest.approx(16.08)
-    assert result["expected_total_points"] == pytest.approx(42.0)
+                expected_home_score REAL NOT NULL,
+                expected_away_score REAL NOT NULL,
+                expected_margin REAL NOT NULL,
+                expected_total REAL NOT NULL,
 
-
-def test_average_teams_produce_league_average_scores() -> None:
-    """Neutral multipliers should reproduce the league scoring averages."""
-    strength_multipliers = pd.DataFrame(
-        [
-            {
-                "fixture_id": "2026-01-15_1_2",
-                "home_attack_multiplier": 1.0,
-                "home_defence_multiplier": 1.0,
-                "away_attack_multiplier": 1.0,
-                "away_defence_multiplier": 1.0,
-            }
-        ]
-    )
-
-    scoring_factors = pd.DataFrame(
-        [
-            {
-                "fixture_id": "2026-01-15_1_2",
-                "league_average_points": 20.0,
-                "home_scoring_factor": 1.10,
-                "away_scoring_factor": 0.90,
-            }
-        ]
-    )
-
-    expected_scores = calculate_expected_scores(
-        strength_multipliers,
-        scoring_factors,
-    )
-
-    result = expected_scores.iloc[0]
-
-    assert result["expected_home_points"] == pytest.approx(22.0)
-    assert result["expected_away_points"] == pytest.approx(18.0)
-    assert result["expected_margin"] == pytest.approx(4.0)
-    assert result["expected_total_points"] == pytest.approx(40.0)
-
-
-def test_rejects_missing_scoring_factors() -> None:
-    """A fixture without matching scoring factors should fail clearly."""
-    strength_multipliers = pd.DataFrame(
-        [
-            {
-                "fixture_id": "2026-01-15_1_2",
-                "home_attack_multiplier": 1.0,
-                "home_defence_multiplier": 1.0,
-                "away_attack_multiplier": 1.0,
-                "away_defence_multiplier": 1.0,
-            }
-        ]
-    )
-
-    scoring_factors = pd.DataFrame(
-        [
-            {
-                "fixture_id": "different_fixture",
-                "league_average_points": 20.0,
-                "home_scoring_factor": 1.1,
-                "away_scoring_factor": 0.9,
-            }
-        ]
-    )
-
-    with pytest.raises(
-        ValueError,
-        match="Missing model features for fixtures",
-    ):
-        calculate_expected_scores(
-            strength_multipliers,
-            scoring_factors,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
         )
 
-
-def test_rejects_non_positive_model_features() -> None:
-    """Multipliers and scoring factors must be greater than zero."""
-    strength_multipliers = pd.DataFrame(
-        [
+        expected_scores = pd.DataFrame(
             {
-                "fixture_id": "2026-01-15_1_2",
-                "home_attack_multiplier": 0.0,
-                "home_defence_multiplier": 1.0,
-                "away_attack_multiplier": 1.0,
-                "away_defence_multiplier": 1.0,
+                "fixture_id": ["fixture_1"],
+                "match_date": [pd.Timestamp("2026-01-01")],
+                "season": [2026],
+                "home_team_id": [1],
+                "away_team_id": [2],
+                "league_average_points": [24.0],
+                "home_scoring_factor": [1.1],
+                "away_scoring_factor": [0.9],
+                "home_attack_multiplier": [1.2],
+                "home_defence_multiplier": [0.95],
+                "away_attack_multiplier": [0.85],
+                "away_defence_multiplier": [1.1],
+                "expected_home_score": [34.85],
+                "expected_away_score": [17.44],
+                "expected_margin": [17.41],
+                "expected_total": [52.29],
             }
-        ]
-    )
-
-    scoring_factors = pd.DataFrame(
-        [
-            {
-                "fixture_id": "2026-01-15_1_2",
-                "league_average_points": 20.0,
-                "home_scoring_factor": 1.1,
-                "away_scoring_factor": 0.9,
-            }
-        ]
-    )
-
-    with pytest.raises(
-        ValueError,
-        match="Model features must be greater than zero",
-    ):
-        calculate_expected_scores(
-            strength_multipliers,
-            scoring_factors,
         )
+
+        rows_saved = save_expected_scores(
+            connection=connection,
+            expected_scores=expected_scores,
+        )
+
+        assert rows_saved == 1
+
+        row = connection.execute(
+            """
+            SELECT
+                fixture_id,
+                match_date,
+                season,
+                home_team_id,
+                away_team_id,
+                league_average_points,
+                home_scoring_factor,
+                away_scoring_factor,
+                home_attack_multiplier,
+                home_defence_multiplier,
+                away_attack_multiplier,
+                away_defence_multiplier,
+                expected_home_score,
+                expected_away_score,
+                expected_margin,
+                expected_total
+            FROM expected_scores
+            """
+        ).fetchone()
+
+        assert row == (
+            "fixture_1",
+            "2026-01-01",
+            2026,
+            1,
+            2,
+            24.0,
+            1.1,
+            0.9,
+            1.2,
+            0.95,
+            0.85,
+            1.1,
+            34.85,
+            17.44,
+            17.41,
+            52.29,
+        )
+
+    finally:
+        connection.close()
