@@ -9,7 +9,7 @@ import pandas as pd
 from rugby_league_pricing.features.scoring_factors import (
     calculate_historical_scoring_factors,
 )
-
+from rugby_league_pricing.utils.sql import upsert_dataframe
 
 REQUIRED_STRENGTH_COLUMNS = {
     "fixture_id",
@@ -214,12 +214,15 @@ def prepare_database_rows(
     return rows
 
 
-def save_expected_scores(
+def upsert_expected_scores(
     connection: sqlite3.Connection,
     expected_scores: pd.DataFrame,
 ) -> int:
-    """Save expected scores to the database."""
-    required_columns = [
+    """Insert or update expected scores."""
+    if expected_scores.empty:
+        return 0
+
+    columns = [
         "fixture_id",
         "match_date",
         "season",
@@ -238,37 +241,21 @@ def save_expected_scores(
         "expected_total",
     ]
 
-    missing = set(required_columns) - set(expected_scores.columns)
-    if missing:
-        raise ValueError(f"Expected scores missing required columns: {sorted(missing)}")
+    missing_columns = set(columns).difference(expected_scores.columns)
 
-    rows = prepare_database_rows(
-        expected_scores=expected_scores,
-        columns=required_columns,
-    )
-
-    placeholders = ", ".join("?" for _ in required_columns)
-    updates = ", ".join(
-        f"{column}=excluded.{column}" for column in required_columns[1:]
-    )
-
-    connection.executemany(
-        f"""
-        INSERT INTO expected_scores (
-            {", ".join(required_columns)}
+    if missing_columns:
+        raise ValueError(
+            f"Expected scores missing required columns: {sorted(missing_columns)}"
         )
-        VALUES ({placeholders})
-        ON CONFLICT (fixture_id)
-        DO UPDATE SET
-            {updates},
-            updated_at = CURRENT_TIMESTAMP
-        """,
-        rows,
+
+    return upsert_dataframe(
+        connection=connection,
+        dataframe=expected_scores,
+        table_name="expected_scores",
+        columns=columns,
+        conflict_columns=["fixture_id"],
+        update_timestamp=True,
     )
-
-    connection.commit()
-
-    return len(rows)
 
 
 def build_expected_scores(
@@ -403,7 +390,7 @@ def rebuild_expected_scores(
         connection=connection,
     )
 
-    return save_expected_scores(
+    return upsert_expected_scores(
         connection=connection,
         expected_scores=expected_scores,
     )
