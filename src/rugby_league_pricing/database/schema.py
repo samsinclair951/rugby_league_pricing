@@ -121,6 +121,46 @@ def initialise_database() -> None:
                     team_id
                 )
             );
+            CREATE TABLE IF NOT EXISTS expected_scores (
+                expected_score_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                fixture_id TEXT NOT NULL UNIQUE,
+                match_date TEXT NOT NULL,
+                season INTEGER NOT NULL,
+
+                home_team_id INTEGER NOT NULL,
+                away_team_id INTEGER NOT NULL,
+
+                league_average_points REAL NOT NULL,
+                home_scoring_factor REAL NOT NULL,
+                away_scoring_factor REAL NOT NULL,
+
+                home_attack_multiplier REAL NOT NULL,
+                home_defence_multiplier REAL NOT NULL,
+                away_attack_multiplier REAL NOT NULL,
+                away_defence_multiplier REAL NOT NULL,
+
+                expected_home_score REAL NOT NULL,
+                expected_away_score REAL NOT NULL,
+                expected_margin REAL NOT NULL,
+                expected_total REAL NOT NULL,
+
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (fixture_id) REFERENCES fixtures(fixture_id),
+                FOREIGN KEY (home_team_id) REFERENCES teams(team_id),
+                FOREIGN KEY (away_team_id) REFERENCES teams(team_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_expected_scores_match_date
+                ON expected_scores(match_date);
+
+            CREATE INDEX IF NOT EXISTS idx_expected_scores_home_team
+                ON expected_scores(home_team_id);
+
+            CREATE INDEX IF NOT EXISTS idx_expected_scores_away_team
+                ON expected_scores(away_team_id);
 
             CREATE INDEX IF NOT EXISTS idx_strength_multipliers_team_date
                 ON strength_multipliers(team_id, match_date);
