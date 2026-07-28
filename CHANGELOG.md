@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] Strength Multipliers
+
+- Persist strength multipliers to SQLite
+
 ## [1.2.0] Expected scores
 
 - base expected scores without adjustments, purely off form
