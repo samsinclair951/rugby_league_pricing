@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
 PROJECT_ROOT = next(
     parent
     for parent in Path(__file__).resolve().parents
@@ -31,6 +33,7 @@ from rugby_league_pricing.database.connection import (
     get_connection,
 )
 from rugby_league_pricing.utils.fixtures import build_fixture_id
+from rugby_league_pricing.utils.sql import upsert_dataframe
 
 LOGGER = logging.getLogger(__name__)
 
@@ -50,11 +53,11 @@ def filter_completed_results(
 
 def prepare_results(
     mapped_matches: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
+) -> pd.DataFrame:
     """
     Select only the fields stored in the results table.
     """
-    return [
+    records = [
         {
             "fixture_id": build_fixture_id(
                 match_date=match["match_date"],
@@ -77,63 +80,47 @@ def prepare_results(
         for match in mapped_matches
     ]
 
+    return pd.DataFrame.from_records(records)
+
 
 def upsert_results(
     connection: sqlite3.Connection,
-    results: list[dict[str, Any]],
+    results: pd.DataFrame,
 ) -> int:
-    if not results:
-        return 0
+    """Insert or update completed results in SQLite."""
+    columns = [
+        "fixture_id",
+        "season",
+        "match_date",
+        "kick_off",
+        "home_team_id",
+        "home_score",
+        "away_team_id",
+        "away_score",
+        "referee",
+        "venue",
+        "attendance",
+        "source_name",
+        "source_match_id",
+    ]
 
-    sql = """
-        INSERT INTO results (
-            fixture_id,
-            season,
-            match_date,
-            kick_off,
-            home_team_id,
-            home_score,
-            away_team_id,
-            away_score,
-            referee,
-            venue,
-            attendance,
-            source_name,
-            source_match_id
-        )
-        VALUES (
-            :fixture_id,
-            :season,
-            :match_date,
-            :kick_off,
-            :home_team_id,
-            :home_score,
-            :away_team_id,
-            :away_score,
-            :referee,
-            :venue,
-            :attendance,
-            :source_name,
-            :source_match_id
-        )
-        ON CONFLICT (fixture_id)
-        DO UPDATE SET
-            kick_off = excluded.kick_off,
-            home_score = excluded.home_score,
-            away_score = excluded.away_score,
-            referee = excluded.referee,
-            venue = excluded.venue,
-            attendance = excluded.attendance,
-            source_match_id = excluded.source_match_id,
-            updated_at = CURRENT_TIMESTAMP
-    """
-
-    connection.executemany(
-        sql,
-        results,
+    return upsert_dataframe(
+        connection=connection,
+        dataframe=results,
+        table_name="results",
+        columns=columns,
+        conflict_columns=["fixture_id"],
+        update_columns=[
+            "kick_off",
+            "home_score",
+            "away_score",
+            "referee",
+            "venue",
+            "attendance",
+            "source_match_id",
+        ],
+        update_timestamp=True,
     )
-
-    return len(results)
 
 
 def ingest_season(

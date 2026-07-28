@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import sqlite3
-from typing import Any
 
 import pandas as pd
+
+from rugby_league_pricing.utils.sql import upsert_dataframe
 
 DEFAULT_FORM_WINDOW = 5
 DEFAULT_LEAGUE_WINDOW = 50
@@ -505,31 +506,7 @@ def build_strength_multipliers(
     )
 
 
-def prepare_database_rows(
-    strength_multipliers: pd.DataFrame,
-) -> list[dict[str, Any]]:
-    """Convert pandas values into SQLite-compatible values."""
-    rows: list[dict[str, Any]] = []
-
-    for record in strength_multipliers.to_dict(orient="records"):
-        prepared_record: dict[str, Any] = {}
-
-        for column, value in record.items():
-            if pd.isna(value):
-                prepared_record[column] = None
-            elif isinstance(value, pd.Timestamp):
-                prepared_record[column] = value.date().isoformat()
-            elif hasattr(value, "item"):
-                prepared_record[column] = value.item()
-            else:
-                prepared_record[column] = value
-
-        rows.append(prepared_record)
-
-    return rows
-
-
-def save_strength_multipliers(
+def upsert_strength_multipliers(
     connection: sqlite3.Connection,
     strength_multipliers: pd.DataFrame,
 ) -> int:
@@ -537,7 +514,7 @@ def save_strength_multipliers(
     if strength_multipliers.empty:
         return 0
 
-    required_columns = {
+    columns = [
         "fixture_id",
         "team_id",
         "opponent_id",
@@ -547,9 +524,9 @@ def save_strength_multipliers(
         "league_average_points",
         "attack_multiplier",
         "defence_multiplier",
-    }
+    ]
 
-    missing_columns = required_columns.difference(strength_multipliers.columns)
+    missing_columns = set(columns).difference(strength_multipliers.columns)
 
     if missing_columns:
         raise ValueError(
@@ -569,51 +546,14 @@ def save_strength_multipliers(
             f"Strength multipliers contain duplicate fixture/team rows: {duplicates}"
         )
 
-    rows = prepare_database_rows(
-        strength_multipliers=strength_multipliers,
+    return upsert_dataframe(
+        connection=connection,
+        dataframe=strength_multipliers,
+        table_name="strength_multipliers",
+        columns=columns,
+        conflict_columns=["fixture_id", "team_id"],
+        update_timestamp=True,
     )
-
-    sql = """
-        INSERT INTO strength_multipliers (
-            fixture_id,
-            team_id,
-            opponent_id,
-            is_home,
-            match_date,
-            season,
-            league_average_points,
-            attack_multiplier,
-            defence_multiplier
-        )
-        VALUES (
-            :fixture_id,
-            :team_id,
-            :opponent_id,
-            :is_home,
-            :match_date,
-            :season,
-            :league_average_points,
-            :attack_multiplier,
-            :defence_multiplier
-        )
-        ON CONFLICT (
-            fixture_id,
-            team_id
-        )
-        DO UPDATE SET
-            opponent_id = excluded.opponent_id,
-            is_home = excluded.is_home,
-            match_date = excluded.match_date,
-            season = excluded.season,
-            league_average_points = excluded.league_average_points,
-            attack_multiplier = excluded.attack_multiplier,
-            defence_multiplier = excluded.defence_multiplier,
-            updated_at = CURRENT_TIMESTAMP
-    """
-
-    connection.executemany(sql, rows)
-
-    return len(rows)
 
 
 def rebuild_strength_multipliers(
@@ -632,7 +572,7 @@ def rebuild_strength_multipliers(
         iterations=iterations,
     )
 
-    return save_strength_multipliers(
+    return upsert_strength_multipliers(
         connection=connection,
         strength_multipliers=strength_multipliers,
     )
