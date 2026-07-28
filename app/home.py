@@ -47,9 +47,7 @@ year = st.selectbox(
 
 season_results = results.loc[results["year"].eq(year)]
 
-teams = sorted(
-    set(season_results["home"]).union(season_results["away"])
-)
+teams = sorted(set(season_results["home"]).union(season_results["away"]))
 
 col1, col2 = st.columns(2)
 
@@ -64,9 +62,7 @@ with col2:
     away_options = [team for team in teams if team != home_team]
 
     default_away_index = (
-        away_options.index("St Helens")
-        if "St Helens" in away_options
-        else 0
+        away_options.index("St Helens") if "St Helens" in away_options else 0
     )
 
     away_team = st.selectbox(
