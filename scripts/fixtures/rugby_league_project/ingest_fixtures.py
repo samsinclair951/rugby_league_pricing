@@ -31,6 +31,7 @@ from rugby_league_pricing.database.connection import (
     DEFAULT_DATABASE_PATH,
     get_connection,
 )
+from rugby_league_pricing.utils.fixtures import build_fixture_id
 
 LOGGER = logging.getLogger(__name__)
 
@@ -46,6 +47,11 @@ def prepare_fixtures(
     """
     return [
         {
+            "fixture_id": build_fixture_id(
+                match_date=match["match_date"],
+                home_team_id=match["home_team_id"],
+                away_team_id=match["away_team_id"],
+            ),
             "season": match["season"],
             "match_date": match["match_date"],
             "kick_off": match["kick_off"],
@@ -60,45 +66,6 @@ def prepare_fixtures(
     ]
 
 
-def create_fixtures_table(
-    connection: sqlite3.Connection,
-) -> None:
-    connection.execute(
-        """
-        CREATE TABLE IF NOT EXISTS fixtures (
-            fixture_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            season INTEGER NOT NULL,
-            match_date TEXT NOT NULL,
-            kick_off TEXT,
-            home_team_id INTEGER NOT NULL,
-            away_team_id INTEGER NOT NULL,
-            referee TEXT,
-            venue TEXT,
-            source_name TEXT NOT NULL,
-            source_match_id TEXT,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-            FOREIGN KEY (home_team_id)
-                REFERENCES teams (team_id),
-
-            FOREIGN KEY (away_team_id)
-                REFERENCES teams (team_id),
-
-            CHECK (home_team_id <> away_team_id),
-
-            UNIQUE (
-                source_name,
-                season,
-                match_date,
-                home_team_id,
-                away_team_id
-            )
-        )
-        """
-    )
-
-
 def upsert_fixtures(
     connection: sqlite3.Connection,
     fixtures: list[dict[str, Any]],
@@ -108,6 +75,7 @@ def upsert_fixtures(
 
     sql = """
         INSERT INTO fixtures (
+            fixture_id,
             season,
             match_date,
             kick_off,
@@ -119,6 +87,7 @@ def upsert_fixtures(
             source_match_id
         )
         VALUES (
+            :fixture_id,
             :season,
             :match_date,
             :kick_off,
@@ -129,17 +98,16 @@ def upsert_fixtures(
             :source_name,
             :source_match_id
         )
-        ON CONFLICT (
-            source_name,
-            season,
-            match_date,
-            home_team_id,
-            away_team_id
-        )
+        ON CONFLICT (fixture_id)
         DO UPDATE SET
+            season = excluded.season,
+            match_date = excluded.match_date,
             kick_off = excluded.kick_off,
+            home_team_id = excluded.home_team_id,
+            away_team_id = excluded.away_team_id,
             referee = excluded.referee,
             venue = excluded.venue,
+            source_name = excluded.source_name,
             source_match_id = excluded.source_match_id,
             updated_at = CURRENT_TIMESTAMP
     """
@@ -207,6 +175,7 @@ def validate_database(
     required_tables = {
         "teams",
         "team_source_mappings",
+        "fixtures",
     }
 
     rows = connection.execute(
@@ -292,8 +261,8 @@ def main() -> None:
     total_ingested = 0
 
     with get_connection(
-    args.database_path,
-) as connection:
+        args.database_path,
+    ) as connection:
         connection.execute(
             "PRAGMA foreign_keys = ON"
         )
@@ -303,10 +272,6 @@ def main() -> None:
         )
 
         try:
-            create_fixtures_table(
-                connection=connection,
-            )
-
             for season in range(
                 args.start_season,
                 args.end_season + 1,
