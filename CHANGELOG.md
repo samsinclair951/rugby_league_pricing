@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0]
+
+- first feature - form guide.
+- readme
+
+## [0.5.0]
+
+- results & fixtures ingestions
+- teams mappings
+
 ## [0.4.0]
 
 - sqllite db created
