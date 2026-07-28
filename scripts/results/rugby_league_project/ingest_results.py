@@ -31,6 +31,7 @@ from rugby_league_pricing.database.connection import (
     DEFAULT_DATABASE_PATH,
     get_connection,
 )
+from rugby_league_pricing.utils.fixtures import build_fixture_id
 
 LOGGER = logging.getLogger(__name__)
 
@@ -59,6 +60,11 @@ def prepare_results(
     """
     return [
         {
+            "fixture_id": build_fixture_id(
+                match_date=match["match_date"],
+                home_team_id=match["home_team_id"],
+                away_team_id=match["away_team_id"],
+            ),
             "season": match["season"],
             "match_date": match["match_date"],
             "kick_off": match["kick_off"],
@@ -85,6 +91,7 @@ def upsert_results(
 
     sql = """
         INSERT INTO results (
+            fixture_id,
             season,
             match_date,
             kick_off,
@@ -99,6 +106,7 @@ def upsert_results(
             source_match_id
         )
         VALUES (
+            :fixture_id,
             :season,
             :match_date,
             :kick_off,
@@ -112,13 +120,7 @@ def upsert_results(
             :source_name,
             :source_match_id
         )
-        ON CONFLICT (
-            source_name,
-            season,
-            match_date,
-            home_team_id,
-            away_team_id
-        )
+        ON CONFLICT (fixture_id)
         DO UPDATE SET
             kick_off = excluded.kick_off,
             home_score = excluded.home_score,
@@ -170,7 +172,7 @@ def ingest_season(
     mapped_matches = apply_team_ids(
         connection=connection,
         matches=completed_matches,
-        create_missing=False,
+        create_missing=True,
     )
 
     results = prepare_results(
