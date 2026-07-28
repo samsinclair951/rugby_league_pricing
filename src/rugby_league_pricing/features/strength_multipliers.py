@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from typing import Any
 
 import pandas as pd
 
@@ -464,6 +465,18 @@ def build_strength_multipliers(
     iterations: int = DEFAULT_ITERATIONS,
 ) -> pd.DataFrame:
     """Build opponent-adjusted attack and defence multipliers."""
+    if form_window <= 0:
+        raise ValueError("Form window must be positive.")
+
+    if league_window <= 0:
+        raise ValueError("League window must be positive.")
+
+    if prior_games <= 0:
+        raise ValueError("Prior games must be positive.")
+
+    if iterations <= 0:
+        raise ValueError("Iterations must be positive.")
+
     recent_form = load_recent_form(
         connection=connection,
     )
@@ -489,4 +502,137 @@ def build_strength_multipliers(
         form_window=form_window,
         prior_games=prior_games,
         iterations=iterations,
+    )
+
+
+def prepare_database_rows(
+    strength_multipliers: pd.DataFrame,
+) -> list[dict[str, Any]]:
+    """Convert pandas values into SQLite-compatible values."""
+    rows: list[dict[str, Any]] = []
+
+    for record in strength_multipliers.to_dict(orient="records"):
+        prepared_record: dict[str, Any] = {}
+
+        for column, value in record.items():
+            if pd.isna(value):
+                prepared_record[column] = None
+            elif isinstance(value, pd.Timestamp):
+                prepared_record[column] = value.date().isoformat()
+            elif hasattr(value, "item"):
+                prepared_record[column] = value.item()
+            else:
+                prepared_record[column] = value
+
+        rows.append(prepared_record)
+
+    return rows
+
+
+def save_strength_multipliers(
+    connection: sqlite3.Connection,
+    strength_multipliers: pd.DataFrame,
+) -> int:
+    """Insert or update pre-match strength multipliers."""
+    if strength_multipliers.empty:
+        return 0
+
+    required_columns = {
+        "fixture_id",
+        "team_id",
+        "opponent_id",
+        "is_home",
+        "match_date",
+        "season",
+        "league_average_points",
+        "attack_multiplier",
+        "defence_multiplier",
+    }
+
+    missing_columns = required_columns.difference(strength_multipliers.columns)
+
+    if missing_columns:
+        raise ValueError(
+            "Strength multipliers are missing required columns: "
+            f"{sorted(missing_columns)}"
+        )
+
+    duplicate_rows = strength_multipliers.duplicated(subset=["fixture_id", "team_id"])
+
+    if duplicate_rows.any():
+        duplicates = strength_multipliers.loc[
+            duplicate_rows,
+            ["fixture_id", "team_id"],
+        ].to_dict(orient="records")
+
+        raise ValueError(
+            f"Strength multipliers contain duplicate fixture/team rows: {duplicates}"
+        )
+
+    rows = prepare_database_rows(
+        strength_multipliers=strength_multipliers,
+    )
+
+    sql = """
+        INSERT INTO strength_multipliers (
+            fixture_id,
+            team_id,
+            opponent_id,
+            is_home,
+            match_date,
+            season,
+            league_average_points,
+            attack_multiplier,
+            defence_multiplier
+        )
+        VALUES (
+            :fixture_id,
+            :team_id,
+            :opponent_id,
+            :is_home,
+            :match_date,
+            :season,
+            :league_average_points,
+            :attack_multiplier,
+            :defence_multiplier
+        )
+        ON CONFLICT (
+            fixture_id,
+            team_id
+        )
+        DO UPDATE SET
+            opponent_id = excluded.opponent_id,
+            is_home = excluded.is_home,
+            match_date = excluded.match_date,
+            season = excluded.season,
+            league_average_points = excluded.league_average_points,
+            attack_multiplier = excluded.attack_multiplier,
+            defence_multiplier = excluded.defence_multiplier,
+            updated_at = CURRENT_TIMESTAMP
+    """
+
+    connection.executemany(sql, rows)
+
+    return len(rows)
+
+
+def rebuild_strength_multipliers(
+    connection: sqlite3.Connection,
+    form_window: int = DEFAULT_FORM_WINDOW,
+    league_window: int = DEFAULT_LEAGUE_WINDOW,
+    prior_games: int = DEFAULT_PRIOR_GAMES,
+    iterations: int = DEFAULT_ITERATIONS,
+) -> int:
+    """Build and persist all available strength multipliers."""
+    strength_multipliers = build_strength_multipliers(
+        connection=connection,
+        form_window=form_window,
+        league_window=league_window,
+        prior_games=prior_games,
+        iterations=iterations,
+    )
+
+    return save_strength_multipliers(
+        connection=connection,
+        strength_multipliers=strength_multipliers,
     )
