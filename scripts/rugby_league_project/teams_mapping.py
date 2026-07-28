@@ -278,9 +278,7 @@ def filter_super_league_matches(
     valid_teams = SUPER_LEAGUE_TEAMS.get(season)
 
     if valid_teams is None:
-        raise ValueError(
-            f"No Super League team list configured for {season}"
-        )
+        raise ValueError(f"No Super League team list configured for {season}")
 
     retained: list[dict[str, Any]] = []
 
@@ -288,10 +286,7 @@ def filter_super_league_matches(
         home_team = match["home_team_name"]
         away_team = match["away_team_name"]
 
-        if (
-            home_team in valid_teams
-            and away_team in valid_teams
-        ):
+        if home_team in valid_teams and away_team in valid_teams:
             retained.append(match)
         else:
             LOGGER.debug(
@@ -303,8 +298,7 @@ def filter_super_league_matches(
     removed_count = len(matches) - len(retained)
 
     LOGGER.info(
-        "Season %s: retained %s league matches "
-        "and removed %s other matches",
+        "Season %s: retained %s league matches and removed %s other matches",
         season,
         len(retained),
         removed_count,
@@ -387,9 +381,7 @@ def create_team(
     team_id = cursor.lastrowid
 
     if team_id is None:
-        raise RuntimeError(
-            f"Failed to create team {canonical_name!r}"
-        )
+        raise RuntimeError(f"Failed to create team {canonical_name!r}")
 
     LOGGER.warning(
         "Created new canonical team: %s -> team_id %s",

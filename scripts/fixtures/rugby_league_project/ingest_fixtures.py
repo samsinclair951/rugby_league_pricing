@@ -186,20 +186,13 @@ def validate_database(
         """
     ).fetchall()
 
-    existing_tables = {
-        str(row[0])
-        for row in rows
-    }
+    existing_tables = {str(row[0]) for row in rows}
 
-    missing_tables = (
-        required_tables
-        - existing_tables
-    )
+    missing_tables = required_tables - existing_tables
 
     if missing_tables:
         raise RuntimeError(
-            "Database is missing required tables: "
-            f"{sorted(missing_tables)}"
+            f"Database is missing required tables: {sorted(missing_tables)}"
         )
 
 
@@ -229,10 +222,7 @@ def parse_arguments() -> argparse.Namespace:
         "--database-path",
         type=Path,
         default=DEFAULT_DATABASE_PATH,
-        help=(
-            "SQLite database path. "
-            f"Default: {DEFAULT_DATABASE_PATH}"
-        ),
+        help=(f"SQLite database path. Default: {DEFAULT_DATABASE_PATH}"),
     )
 
     return parser.parse_args()
@@ -242,16 +232,10 @@ def main() -> None:
     args = parse_arguments()
 
     if args.start_season > args.end_season:
-        raise ValueError(
-            "--start-season cannot be later "
-            "than --end-season"
-        )
+        raise ValueError("--start-season cannot be later than --end-season")
 
     if not args.database_path.exists():
-        raise FileNotFoundError(
-            f"Database does not exist: "
-            f"{args.database_path}"
-        )
+        raise FileNotFoundError(f"Database does not exist: {args.database_path}")
 
     LOGGER.info(
         "Using database: %s",
@@ -263,9 +247,7 @@ def main() -> None:
     with get_connection(
         args.database_path,
     ) as connection:
-        connection.execute(
-            "PRAGMA foreign_keys = ON"
-        )
+        connection.execute("PRAGMA foreign_keys = ON")
 
         validate_database(
             connection=connection,
@@ -288,8 +270,7 @@ def main() -> None:
             raise
 
     LOGGER.info(
-        "Finished. Inserted or updated %s fixtures "
-        "from %s.",
+        "Finished. Inserted or updated %s fixtures from %s.",
         total_ingested,
         SOURCE_NAME,
     )

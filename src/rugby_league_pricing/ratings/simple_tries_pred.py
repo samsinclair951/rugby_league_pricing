@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import argparse
@@ -10,7 +9,6 @@ import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from scipy.stats import poisson
-
 
 POINTS_PER_TRY = 5.2
 DEFAULT_MAX_TRIES = 16
@@ -149,9 +147,7 @@ def predict_match(
     away_win_probability = float(np.triu(values, k=1).sum())
 
     # A finite matrix omits a tiny tail above max_tries, so normalise.
-    total_probability = (
-        home_win_probability + draw_probability + away_win_probability
-    )
+    total_probability = home_win_probability + draw_probability + away_win_probability
     home_win_probability /= total_probability
     draw_probability /= total_probability
     away_win_probability /= total_probability
