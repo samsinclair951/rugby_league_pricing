@@ -8,8 +8,4 @@ def build_fixture_id(
 ) -> str:
     """Build a unique identifier for a fixture."""
 
-    return (
-        f"{match_date}_"
-        f"{home_team_id}_"
-        f"{away_team_id}"
-    )
+    return f"{match_date}_{home_team_id}_{away_team_id}"

@@ -4,7 +4,6 @@ import sqlite3
 
 import pandas as pd
 
-
 DEFAULT_FORM_WINDOW = 5
 DEFAULT_LEAGUE_WINDOW = 50
 DEFAULT_PRIOR_GAMES = 3
@@ -45,9 +44,7 @@ def load_recent_form(
     )
 
     if recent_form.empty:
-        raise ValueError(
-            "No recent-form rows were found."
-        )
+        raise ValueError("No recent-form rows were found.")
 
     recent_form["match_date"] = pd.to_datetime(
         recent_form["match_date"],
@@ -68,9 +65,7 @@ def add_league_average(
     the match takes place.
     """
     if league_window <= 0:
-        raise ValueError(
-            "League window must be positive."
-        )
+        raise ValueError("League window must be positive.")
 
     fixture_scores = (
         recent_form.groupby(
@@ -129,15 +124,10 @@ def add_opponent_recent_form(
         f"recent_games_used_{form_window}",
     }
 
-    missing_columns = required_columns.difference(
-        recent_form.columns
-    )
+    missing_columns = required_columns.difference(recent_form.columns)
 
     if missing_columns:
-        raise ValueError(
-            "Recent form is missing columns: "
-            f"{sorted(missing_columns)}"
-        )
+        raise ValueError(f"Recent form is missing columns: {sorted(missing_columns)}")
 
     opponent_form = recent_form[
         [
@@ -150,15 +140,9 @@ def add_opponent_recent_form(
     ].rename(
         columns={
             "team_id": "opponent_id",
-            (
-                f"recent_points_for_{form_window}"
-            ): "opponent_recent_points_for",
-            (
-                f"recent_points_against_{form_window}"
-            ): "opponent_recent_points_against",
-            (
-                f"recent_games_used_{form_window}"
-            ): "opponent_recent_games_used",
+            (f"recent_points_for_{form_window}"): "opponent_recent_points_for",
+            (f"recent_points_against_{form_window}"): "opponent_recent_points_against",
+            (f"recent_games_used_{form_window}"): "opponent_recent_games_used",
         }
     )
 
@@ -185,24 +169,12 @@ def shrink_average(
     For example, with three prior games, one observed match receives
     25% weight and the league average receives 75% weight.
     """
-    observed_average = observed_average.fillna(
-        league_average
-    )
+    observed_average = observed_average.fillna(league_average)
 
     games_used = games_used.fillna(0)
 
-    return (
-        (
-            observed_average
-            * games_used
-        )
-        + (
-            league_average
-            * prior_games
-        )
-    ) / (
-        games_used
-        + prior_games
+    return ((observed_average * games_used) + (league_average * prior_games)) / (
+        games_used + prior_games
     )
 
 
@@ -219,52 +191,36 @@ def add_raw_multipliers(
     A defence multiplier below 1 means better-than-average defence.
     """
     if prior_games <= 0:
-        raise ValueError(
-            "Prior games must be positive."
-        )
+        raise ValueError("Prior games must be positive.")
 
     strength = recent_form.copy()
 
-    games_column = (
-        f"recent_games_used_{form_window}"
-    )
+    games_column = f"recent_games_used_{form_window}"
 
-    points_for_column = (
-        f"recent_points_for_{form_window}"
-    )
+    points_for_column = f"recent_points_for_{form_window}"
 
-    points_against_column = (
-        f"recent_points_against_{form_window}"
-    )
+    points_against_column = f"recent_points_against_{form_window}"
 
     strength["shrunk_points_for"] = shrink_average(
         observed_average=strength[points_for_column],
         games_used=strength[games_column],
-        league_average=strength[
-            "league_average_points"
-        ],
+        league_average=strength["league_average_points"],
         prior_games=prior_games,
     )
 
     strength["shrunk_points_against"] = shrink_average(
-        observed_average=strength[
-            points_against_column
-        ],
+        observed_average=strength[points_against_column],
         games_used=strength[games_column],
-        league_average=strength[
-            "league_average_points"
-        ],
+        league_average=strength["league_average_points"],
         prior_games=prior_games,
     )
 
     strength["raw_attack_multiplier"] = (
-        strength["shrunk_points_for"]
-        / strength["league_average_points"]
+        strength["shrunk_points_for"] / strength["league_average_points"]
     )
 
     strength["raw_defence_multiplier"] = (
-        strength["shrunk_points_against"]
-        / strength["league_average_points"]
+        strength["shrunk_points_against"] / strength["league_average_points"]
     )
 
     return strength
@@ -280,11 +236,7 @@ def add_opponent_multipliers(
     ]
 
     strength = strength.drop(
-        columns=[
-            column
-            for column in columns_to_remove
-            if column in strength.columns
-        ]
+        columns=[column for column in columns_to_remove if column in strength.columns]
     )
 
     opponent_strength = strength[
@@ -312,13 +264,13 @@ def add_opponent_multipliers(
         validate="one_to_one",
     )
 
-    strength["opponent_attack_multiplier"] = (
-        strength["opponent_attack_multiplier"].fillna(1.0)
-    )
+    strength["opponent_attack_multiplier"] = strength[
+        "opponent_attack_multiplier"
+    ].fillna(1.0)
 
-    strength["opponent_defence_multiplier"] = (
-        strength["opponent_defence_multiplier"].fillna(1.0)
-    )
+    strength["opponent_defence_multiplier"] = strength[
+        "opponent_defence_multiplier"
+    ].fillna(1.0)
 
     return strength
 
@@ -336,13 +288,11 @@ def add_adjusted_performances(
     adjusted = strength.copy()
 
     adjusted["adjusted_points_for"] = (
-        adjusted["points_for"]
-        / adjusted["opponent_defence_multiplier"]
+        adjusted["points_for"] / adjusted["opponent_defence_multiplier"]
     )
 
     adjusted["adjusted_points_against"] = (
-        adjusted["points_against"]
-        / adjusted["opponent_attack_multiplier"]
+        adjusted["points_against"] / adjusted["opponent_attack_multiplier"]
     )
 
     return adjusted
@@ -371,29 +321,27 @@ def add_strength_multipliers(
         sort=False,
     )
 
-    ordered["adjusted_points_for_average"] = (
-        grouped["adjusted_points_for"].transform(
-            lambda values: (
-                values.shift(1)
-                .rolling(
-                    window=form_window,
-                    min_periods=1,
-                )
-                .mean()
+    ordered["adjusted_points_for_average"] = grouped["adjusted_points_for"].transform(
+        lambda values: (
+            values.shift(1)
+            .rolling(
+                window=form_window,
+                min_periods=1,
             )
+            .mean()
         )
     )
 
-    ordered["adjusted_points_against_average"] = (
-        grouped["adjusted_points_against"].transform(
-            lambda values: (
-                values.shift(1)
-                .rolling(
-                    window=form_window,
-                    min_periods=1,
-                )
-                .mean()
+    ordered["adjusted_points_against_average"] = grouped[
+        "adjusted_points_against"
+    ].transform(
+        lambda values: (
+            values.shift(1)
+            .rolling(
+                window=form_window,
+                min_periods=1,
             )
+            .mean()
         )
     )
 
@@ -412,48 +360,28 @@ def add_strength_multipliers(
         .fillna(0)
     )
 
-    ordered["strength_games_used"] = (
-        adjusted_games_used.astype(int)
+    ordered["strength_games_used"] = adjusted_games_used.astype(int)
+
+    ordered["adjusted_points_for_average"] = shrink_average(
+        observed_average=ordered["adjusted_points_for_average"],
+        games_used=ordered["strength_games_used"],
+        league_average=ordered["league_average_points"],
+        prior_games=prior_games,
     )
 
-    ordered["adjusted_points_for_average"] = (
-        shrink_average(
-            observed_average=ordered[
-                "adjusted_points_for_average"
-            ],
-            games_used=ordered[
-                "strength_games_used"
-            ],
-            league_average=ordered[
-                "league_average_points"
-            ],
-            prior_games=prior_games,
-        )
-    )
-
-    ordered["adjusted_points_against_average"] = (
-        shrink_average(
-            observed_average=ordered[
-                "adjusted_points_against_average"
-            ],
-            games_used=ordered[
-                "strength_games_used"
-            ],
-            league_average=ordered[
-                "league_average_points"
-            ],
-            prior_games=prior_games,
-        )
+    ordered["adjusted_points_against_average"] = shrink_average(
+        observed_average=ordered["adjusted_points_against_average"],
+        games_used=ordered["strength_games_used"],
+        league_average=ordered["league_average_points"],
+        prior_games=prior_games,
     )
 
     ordered["attack_multiplier"] = (
-        ordered["adjusted_points_for_average"]
-        / ordered["league_average_points"]
+        ordered["adjusted_points_for_average"] / ordered["league_average_points"]
     )
 
     ordered["defence_multiplier"] = (
-        ordered["adjusted_points_against_average"]
-        / ordered["league_average_points"]
+        ordered["adjusted_points_against_average"] / ordered["league_average_points"]
     )
 
     return ordered.reset_index(drop=True)
@@ -486,28 +414,22 @@ def iterate_strength_multipliers(
     ratings to change by only negligible amounts.
     """
     if iterations <= 0:
-        raise ValueError(
-            "Iterations must be positive."
-        )
+        raise ValueError("Iterations must be positive.")
 
     iterative_strength = strength.copy()
 
-    iterative_strength["attack_multiplier"] = (
-        iterative_strength["raw_attack_multiplier"]
-    )
+    iterative_strength["attack_multiplier"] = iterative_strength[
+        "raw_attack_multiplier"
+    ]
 
-    iterative_strength["defence_multiplier"] = (
-        iterative_strength["raw_defence_multiplier"]
-    )
+    iterative_strength["defence_multiplier"] = iterative_strength[
+        "raw_defence_multiplier"
+    ]
 
     for _ in range(iterations):
-        previous_attack = (
-            iterative_strength["attack_multiplier"].copy()
-        )
+        previous_attack = iterative_strength["attack_multiplier"].copy()
 
-        previous_defence = (
-            iterative_strength["defence_multiplier"].copy()
-        )
+        previous_defence = iterative_strength["defence_multiplier"].copy()
 
         iterative_strength = add_opponent_multipliers(
             strength=iterative_strength,
@@ -524,14 +446,8 @@ def iterate_strength_multipliers(
         )
 
         maximum_change = max(
-            (
-                iterative_strength["attack_multiplier"]
-                - previous_attack
-            ).abs().max(),
-            (
-                iterative_strength["defence_multiplier"]
-                - previous_defence
-            ).abs().max(),
+            (iterative_strength["attack_multiplier"] - previous_attack).abs().max(),
+            (iterative_strength["defence_multiplier"] - previous_defence).abs().max(),
         )
 
         if maximum_change < tolerance:
