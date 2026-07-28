@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] Expected scores
+
+- base expected scores without adjustments, purely off form
+
 ## [1.1.0] Attack/Defence Strength Multipliers
 
 - opponent-adjusted strength multipliers

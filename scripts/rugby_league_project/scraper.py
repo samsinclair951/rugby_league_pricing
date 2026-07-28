@@ -14,10 +14,7 @@ BASE_URL = "https://www.rugbyleagueproject.org/seasons"
 
 
 def season_url(season: int) -> str:
-    return (
-        f"{BASE_URL}/"
-        f"super-league-{season}/results.html"
-    )
+    return f"{BASE_URL}/super-league-{season}/results.html"
 
 
 def scrape_season_page(season: int) -> Tag:
@@ -28,12 +25,7 @@ def scrape_season_page(season: int) -> Tag:
     response = requests.get(
         url,
         timeout=30,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 "
-                "RugbyLeaguePricing/1.0"
-            )
-        },
+        headers={"User-Agent": ("Mozilla/5.0 RugbyLeaguePricing/1.0")},
     )
     response.raise_for_status()
 
@@ -45,19 +37,12 @@ def scrape_season_page(season: int) -> Tag:
     content = soup.find(id="content")
 
     if content is None:
-        raise ValueError(
-            f"Could not find #content for season {season}"
-        )
+        raise ValueError(f"Could not find #content for season {season}")
 
     match_list = content.find(class_="list")
 
-    if (
-        match_list is None
-        or not isinstance(match_list, Tag)
-    ):
-        raise ValueError(
-            f"Could not find match list for season {season}"
-        )
+    if match_list is None or not isinstance(match_list, Tag):
+        raise ValueError(f"Could not find match list for season {season}")
 
     return match_list
 
@@ -91,20 +76,14 @@ def parse_match_rows(
     current_month: str | None = None
 
     for row in match_list.find_all("tr"):
-        cells = [
-            cell.get_text(" ", strip=True)
-            for cell in row.find_all("td")
-        ]
+        cells = [cell.get_text(" ", strip=True) for cell in row.find_all("td")]
 
         if len(cells) != 10:
             continue
 
         date_value = cells[0].strip()
 
-        if any(
-            character.isalpha()
-            for character in date_value
-        ):
+        if any(character.isalpha() for character in date_value):
             date_parts = date_value.split()
 
             if len(date_parts) != 2:

@@ -6,7 +6,6 @@ from typing import Any
 
 import pandas as pd
 
-
 RESULTS_SOURCE = "rugby_league_project"
 DEFAULT_WINDOWS = (5, 10)
 
@@ -41,9 +40,7 @@ def load_results(
     )
 
     if results.empty:
-        raise ValueError(
-            f"No completed results found for source {source_name!r}"
-        )
+        raise ValueError(f"No completed results found for source {source_name!r}")
 
     results["match_date"] = pd.to_datetime(
         results["match_date"],
@@ -77,15 +74,10 @@ def stack_results(
         "away_score",
     }
 
-    missing_columns = required_columns.difference(
-        results.columns
-    )
+    missing_columns = required_columns.difference(results.columns)
 
     if missing_columns:
-        raise ValueError(
-            "Results are missing columns: "
-            f"{sorted(missing_columns)}"
-        )
+        raise ValueError(f"Results are missing columns: {sorted(missing_columns)}")
 
     home_rows = pd.DataFrame(
         {
@@ -118,10 +110,7 @@ def stack_results(
         ignore_index=True,
     )
 
-    team_matches["margin"] = (
-        team_matches["points_for"]
-        - team_matches["points_against"]
-    )
+    team_matches["margin"] = team_matches["points_for"] - team_matches["points_against"]
 
     return team_matches.sort_values(
         [
@@ -150,32 +139,13 @@ def add_recent_form(
         sort=False,
     )
 
-    recent_form["history_games_before"] = (
-        grouped.cumcount()
-    )
+    recent_form["history_games_before"] = grouped.cumcount()
 
     for window in windows:
         if window <= 0:
-            raise ValueError(
-                f"Rolling windows must be positive: {window}"
-            )
+            raise ValueError(f"Rolling windows must be positive: {window}")
 
-        recent_form[f"recent_points_for_{window}"] = (
-            grouped["points_for"].transform(
-                lambda values: (
-                    values.shift(1)
-                    .rolling(
-                        window=window,
-                        min_periods=1,
-                    )
-                    .mean()
-                )
-            )
-        )
-
-        recent_form[
-            f"recent_points_against_{window}"
-        ] = grouped["points_against"].transform(
+        recent_form[f"recent_points_for_{window}"] = grouped["points_for"].transform(
             lambda values: (
                 values.shift(1)
                 .rolling(
@@ -186,16 +156,27 @@ def add_recent_form(
             )
         )
 
-        recent_form[f"recent_margin_{window}"] = (
-            grouped["margin"].transform(
-                lambda values: (
-                    values.shift(1)
-                    .rolling(
-                        window=window,
-                        min_periods=1,
-                    )
-                    .mean()
+        recent_form[f"recent_points_against_{window}"] = grouped[
+            "points_against"
+        ].transform(
+            lambda values: (
+                values.shift(1)
+                .rolling(
+                    window=window,
+                    min_periods=1,
                 )
+                .mean()
+            )
+        )
+
+        recent_form[f"recent_margin_{window}"] = grouped["margin"].transform(
+            lambda values: (
+                values.shift(1)
+                .rolling(
+                    window=window,
+                    min_periods=1,
+                )
+                .mean()
             )
         )
 
@@ -242,18 +223,14 @@ def prepare_database_rows(
     """Convert pandas values into values supported by SQLite."""
     rows: list[dict[str, Any]] = []
 
-    for record in recent_form.to_dict(
-        orient="records"
-    ):
+    for record in recent_form.to_dict(orient="records"):
         prepared_record: dict[str, Any] = {}
 
         for column, value in record.items():
             if pd.isna(value):
                 prepared_record[column] = None
             elif isinstance(value, pd.Timestamp):
-                prepared_record[column] = (
-                    value.date().isoformat()
-                )
+                prepared_record[column] = value.date().isoformat()
             elif hasattr(value, "item"):
                 prepared_record[column] = value.item()
             else:
@@ -277,14 +254,12 @@ def save_recent_form(
     missing_windows = {
         window
         for window in required_windows
-        if f"recent_margin_{window}"
-        not in recent_form.columns
+        if f"recent_margin_{window}" not in recent_form.columns
     }
 
     if missing_windows:
         raise ValueError(
-            "Recent form is missing required windows: "
-            f"{sorted(missing_windows)}"
+            f"Recent form is missing required windows: {sorted(missing_windows)}"
         )
 
     rows = prepare_database_rows(
