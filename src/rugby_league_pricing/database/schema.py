@@ -94,6 +94,40 @@ def initialise_database() -> None:
                 )
             );
 
+            CREATE TABLE IF NOT EXISTS strength_multipliers (
+                strength_multiplier_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                fixture_id TEXT NOT NULL,
+                team_id INTEGER NOT NULL,
+                opponent_id INTEGER NOT NULL,
+                is_home INTEGER NOT NULL,
+
+                match_date TEXT NOT NULL,
+                season INTEGER NOT NULL,
+
+                league_average_points REAL,
+                attack_multiplier REAL,
+                defence_multiplier REAL,
+
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (fixture_id) REFERENCES fixtures(fixture_id),
+                FOREIGN KEY (team_id) REFERENCES teams(team_id),
+                FOREIGN KEY (opponent_id) REFERENCES teams(team_id),
+
+                UNIQUE (
+                    fixture_id,
+                    team_id
+                )
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_strength_multipliers_team_date
+                ON strength_multipliers(team_id, match_date);
+
+            CREATE INDEX IF NOT EXISTS idx_strength_multipliers_fixture
+                ON strength_multipliers(fixture_id);
+
             CREATE INDEX IF NOT EXISTS idx_recent_form_team_date
                 ON recent_form(team_id, match_date);
 
