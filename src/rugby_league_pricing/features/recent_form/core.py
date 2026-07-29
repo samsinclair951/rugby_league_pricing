@@ -1,9 +1,8 @@
 """Core recent-form calculation helpers."""
 
-from __future__ import annotations
+from typing import Sequence
 
 import sqlite3
-from collections.abc import Sequence
 
 import pandas as pd
 

@@ -1,5 +1,3 @@
-"""Shared constants for recent-form feature modules."""
-
 RESULTS_SOURCE = "rugby_league_project"
 DEFAULT_WINDOWS = (5, 10)
 
