@@ -9,7 +9,7 @@ PROJECT_ROOT = next(
     if (parent / "pyproject.toml").exists()
 )
 
-DEFAULT_DATABASE_PATH = PROJECT_ROOT / "data" / "rugby_league.db"
+DEFAULT_DATABASE_PATH = PROJECT_ROOT / "data" / "rugby_league_pricing.db"
 
 
 def get_connection(
