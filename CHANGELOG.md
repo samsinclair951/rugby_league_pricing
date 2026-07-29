@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.4.1] Features refactor
+## [1.4.3]
+
+- readme fix
+
+## [1.4.2] Features refactor
 
 - tidy up of the feature functions
 
