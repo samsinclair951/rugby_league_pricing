@@ -1,33 +1,30 @@
-"""Calculate historical league and venue scoring factors."""
+"""Core scoring-factor calculation helpers."""
 
 from __future__ import annotations
 
 import pandas as pd
 
-REQUIRED_RESULT_COLUMNS = {
-    "fixture_id",
-    "match_date",
-    "home_points",
-    "away_points",
-}
+from .constants import REQUIRED_RESULT_COLUMNS
 
 
 def validate_results(results: pd.DataFrame) -> None:
-    """Validate the results required for scoring-factor calculation.
+    """Validate the results required for scoring-factor calculation."""
+    _validate_required_columns(results)
+    _validate_fixture_ids(results)
+    _validate_points(results)
 
-    Args:
-        results: Historical fixture results.
 
-    Raises:
-        ValueError: If required columns are missing, results are empty, or
-            points columns contain invalid values.
-    """
+def _validate_required_columns(results: pd.DataFrame) -> None:
+    """Ensure the input contains all required result columns."""
     missing_columns = REQUIRED_RESULT_COLUMNS.difference(results.columns)
 
     if missing_columns:
         missing = ", ".join(sorted(missing_columns))
         raise ValueError(f"Results are missing required columns: {missing}")
 
+
+def _validate_fixture_ids(results: pd.DataFrame) -> None:
+    """Ensure the results are non-empty and fixture IDs are unique."""
     if results.empty:
         raise ValueError("Results cannot be empty.")
 
@@ -41,6 +38,9 @@ def validate_results(results: pd.DataFrame) -> None:
             f"Results contain duplicate fixture IDs: {duplicate_fixture_ids}"
         )
 
+
+def _validate_points(results: pd.DataFrame) -> None:
+    """Ensure completed results contain valid point totals."""
     points_columns = ["home_points", "away_points"]
 
     if results[points_columns].isna().any().any():
@@ -50,35 +50,8 @@ def validate_results(results: pd.DataFrame) -> None:
         raise ValueError("Points cannot be negative.")
 
 
-def calculate_historical_scoring_factors(
-    results: pd.DataFrame,
-) -> pd.DataFrame:
-    """Calculate league-average and home/away scoring factors by fixture.
-
-    The factors for each fixture are calculated using results from earlier
-    match dates only. All fixtures on the same date therefore receive the
-    same pre-match factors, preventing matches played earlier in the input
-    ordering from leaking into other fixtures on that date.
-
-    League-average points represents the historical average points scored
-    by one team per match.
-
-    Args:
-        results: Historical completed fixtures.
-
-    Returns:
-        One row per fixture containing:
-
-        - fixture_id
-        - league_average_points
-        - home_scoring_factor
-        - away_scoring_factor
-
-        Fixtures on the first available match date will contain missing
-        factors because no previous results exist.
-    """
-    validate_results(results)
-
+def _prepare_scoring_data(results: pd.DataFrame) -> pd.DataFrame:
+    """Select the required columns and normalise match dates."""
     scoring = results[
         [
             "fixture_id",
@@ -93,6 +66,11 @@ def calculate_historical_scoring_factors(
         errors="raise",
     ).dt.normalize()
 
+    return scoring
+
+
+def _calculate_daily_scoring(scoring: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate scoring totals by match date and compute rolling averages."""
     daily_scoring = (
         scoring.groupby("match_date", as_index=False)
         .agg(
@@ -140,7 +118,12 @@ def calculate_historical_scoring_factors(
         historical_away_average / daily_scoring["league_average_points"]
     )
 
-    factors_by_date = daily_scoring[
+    return daily_scoring
+
+
+def _build_factors_by_date(daily_scoring: pd.DataFrame) -> pd.DataFrame:
+    """Select the factor columns required for the final output."""
+    return daily_scoring[
         [
             "match_date",
             "league_average_points",
@@ -149,6 +132,12 @@ def calculate_historical_scoring_factors(
         ]
     ]
 
+
+def _merge_factors_to_scoring(
+    scoring: pd.DataFrame,
+    factors_by_date: pd.DataFrame,
+) -> pd.DataFrame:
+    """Attach the pre-match factors to each fixture by match date."""
     return (
         scoring[["fixture_id", "match_date"]]
         .merge(
@@ -159,3 +148,16 @@ def calculate_historical_scoring_factors(
         )
         .drop(columns="match_date")
     )
+
+
+def calculate_historical_scoring_factors(
+    results: pd.DataFrame,
+) -> pd.DataFrame:
+    """Calculate league-average and home/away scoring factors by fixture."""
+    validate_results(results)
+
+    scoring = _prepare_scoring_data(results)
+    daily_scoring = _calculate_daily_scoring(scoring)
+    factors_by_date = _build_factors_by_date(daily_scoring)
+
+    return _merge_factors_to_scoring(scoring, factors_by_date)

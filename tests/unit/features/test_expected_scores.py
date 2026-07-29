@@ -3,8 +3,42 @@
 import sqlite3
 
 import pandas as pd
+import pytest
 
 from rugby_league_pricing.features.expected_scores import upsert_expected_scores
+from rugby_league_pricing.features.expected_scores.core import (
+    _validate_model_features,
+)
+
+
+def test_validate_model_features_rejects_missing_or_non_positive_values() -> None:
+    """Model-feature validation should catch missing or non-positive inputs."""
+    expected_scores = pd.DataFrame(
+        {
+            "fixture_id": ["fixture_1"],
+            "league_average_points": [10.0],
+            "home_scoring_factor": [1.0],
+            "away_scoring_factor": [1.0],
+            "home_attack_multiplier": [1.0],
+            "home_defence_multiplier": [1.0],
+            "away_attack_multiplier": [1.0],
+            "away_defence_multiplier": [0.0],
+        }
+    )
+
+    with pytest.raises(ValueError, match="greater than zero"):
+        _validate_model_features(
+            expected_scores=expected_scores,
+            model_feature_columns=[
+                "home_attack_multiplier",
+                "home_defence_multiplier",
+                "away_attack_multiplier",
+                "away_defence_multiplier",
+                "league_average_points",
+                "home_scoring_factor",
+                "away_scoring_factor",
+            ],
+        )
 
 
 def test_upsert_expected_scores_round_trip() -> None:

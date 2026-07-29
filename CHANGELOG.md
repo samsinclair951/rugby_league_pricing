@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1] Features refactor
+
+- tidy up of the feature functions
+
 ## [1.4.1] Upsert refactor
 
 - use upsert function for any upserting

@@ -1,3 +1,5 @@
+"""Core recent-form calculation helpers."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -5,28 +7,7 @@ from collections.abc import Sequence
 
 import pandas as pd
 
-from rugby_league_pricing.utils.sql import upsert_dataframe
-
-RESULTS_SOURCE = "rugby_league_project"
-DEFAULT_WINDOWS = (5, 10)
-
-RESULTS_QUERY = """
-    SELECT
-        fixture_id,
-        season,
-        match_date,
-        home_team_id,
-        home_score,
-        away_team_id,
-        away_score
-    FROM results
-    WHERE source_name = ?
-      AND home_score IS NOT NULL
-      AND away_score IS NOT NULL
-    ORDER BY
-        match_date,
-        fixture_id
-"""
+from .constants import DEFAULT_WINDOWS, RESULTS_QUERY, RESULTS_SOURCE
 
 
 def load_results(
@@ -61,9 +42,7 @@ def load_results(
     return results
 
 
-def stack_results(
-    results: pd.DataFrame,
-) -> pd.DataFrame:
+def stack_results(results: pd.DataFrame) -> pd.DataFrame:
     """Convert each result into one performance row per team."""
     required_columns = {
         "fixture_id",
@@ -106,19 +85,11 @@ def stack_results(
         }
     )
 
-    team_matches = pd.concat(
-        [home_rows, away_rows],
-        ignore_index=True,
-    )
-
+    team_matches = pd.concat([home_rows, away_rows], ignore_index=True)
     team_matches["margin"] = team_matches["points_for"] - team_matches["points_against"]
 
     return team_matches.sort_values(
-        [
-            "team_id",
-            "match_date",
-            "fixture_id",
-        ]
+        ["team_id", "match_date", "fixture_id"]
     ).reset_index(drop=True)
 
 
@@ -128,18 +99,10 @@ def add_recent_form(
 ) -> pd.DataFrame:
     """Add pre-match rolling attack, defence and margin features."""
     recent_form = team_matches.sort_values(
-        [
-            "team_id",
-            "match_date",
-            "fixture_id",
-        ]
+        ["team_id", "match_date", "fixture_id"]
     ).copy()
 
-    grouped = recent_form.groupby(
-        "team_id",
-        sort=False,
-    )
-
+    grouped = recent_form.groupby("team_id", sort=False)
     recent_form["history_games_before"] = grouped.cumcount()
 
     for window in windows:
@@ -184,99 +147,6 @@ def build_recent_form(
     windows: Sequence[int] = DEFAULT_WINDOWS,
 ) -> pd.DataFrame:
     """Load results and calculate recent-form features."""
-    results = load_results(
-        connection=connection,
-    )
-
-    team_matches = stack_results(
-        results=results,
-    )
-
-    return add_recent_form(
-        team_matches=team_matches,
-        windows=windows,
-    )
-
-
-def upsert_recent_form(
-    connection: sqlite3.Connection,
-    recent_form: pd.DataFrame,
-) -> int:
-    """Insert or update recent-form rows."""
-    if recent_form.empty:
-        return 0
-
-    required_windows = set(DEFAULT_WINDOWS)
-
-    missing_windows = {
-        window
-        for window in required_windows
-        if f"recent_margin_{window}" not in recent_form.columns
-    }
-
-    if missing_windows:
-        raise ValueError(
-            f"Recent form is missing required windows: {sorted(missing_windows)}"
-        )
-
-    columns = [
-        "fixture_id",
-        "team_id",
-        "opponent_id",
-        "is_home",
-        "match_date",
-        "season",
-        "points_for",
-        "points_against",
-        "margin",
-        "history_games_before",
-        "recent_points_for_5",
-        "recent_points_against_5",
-        "recent_margin_5",
-        "recent_games_used_5",
-        "recent_points_for_10",
-        "recent_points_against_10",
-        "recent_margin_10",
-        "recent_games_used_10",
-    ]
-
-    missing_columns = set(columns).difference(recent_form.columns)
-
-    if missing_columns:
-        raise ValueError(
-            f"Recent form is missing required columns: {sorted(missing_columns)}"
-        )
-
-    duplicate_rows = recent_form.duplicated(subset=["fixture_id", "team_id"])
-
-    if duplicate_rows.any():
-        duplicates = recent_form.loc[
-            duplicate_rows,
-            ["fixture_id", "team_id"],
-        ].to_dict(orient="records")
-
-        raise ValueError(
-            f"Recent form contains duplicate fixture/team rows: {duplicates}"
-        )
-
-    return upsert_dataframe(
-        connection=connection,
-        dataframe=recent_form,
-        table_name="recent_form",
-        columns=columns,
-        conflict_columns=["fixture_id", "team_id"],
-        update_timestamp=True,
-    )
-
-
-def rebuild_recent_form(
-    connection: sqlite3.Connection,
-) -> int:
-    """Recalculate and upsert all recent-form rows."""
-    recent_form = build_recent_form(
-        connection=connection,
-    )
-    return upsert_recent_form(
-        connection=connection,
-        recent_form=recent_form,
-    )
+    results = load_results(connection=connection)
+    team_matches = stack_results(results=results)
+    return add_recent_form(team_matches=team_matches, windows=windows)
