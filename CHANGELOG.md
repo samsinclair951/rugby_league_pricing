@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] DB Rebuild script
+
+- rebuild_db script file (in case we have to delete and re-initialise)
+
 ## [2.0.0] Pricing
 
 - score matrices
