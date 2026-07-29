@@ -127,13 +127,12 @@ Each expected score combines three independent signals: the league baseline, opp
 - Scrape fixtures
 - Maintain canonical team mappings
 - Store data in SQLite
-- Build recent-form features
+- Build recent-form & expected scores features
 
 ## Roadmap
 
-- Days since previous game
-- Opponent-adjusted form
-- Team ratings
-- Player ratings
 - Match pricing model
+- Days since previous game
+- Player ratings
+- Team news analysis
 - Dashboard
