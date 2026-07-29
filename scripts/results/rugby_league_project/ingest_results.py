@@ -9,6 +9,11 @@ from typing import Any
 
 import pandas as pd
 
+from scripts.fixtures.rugby_league_project.ingest_fixtures import (
+    prepare_fixtures,
+    upsert_fixtures,
+)
+
 PROJECT_ROOT = next(
     parent
     for parent in Path(__file__).resolve().parents
@@ -156,6 +161,21 @@ def ingest_season(
         connection=connection,
         matches=completed_matches,
         create_missing=True,
+    )
+
+    fixtures = prepare_fixtures(
+        mapped_matches=mapped_matches,
+    )
+
+    fixture_count = upsert_fixtures(
+        connection=connection,
+        fixtures=fixtures,
+    )
+
+    LOGGER.info(
+        "Season %s: inserted or updated %s fixtures",
+        season,
+        fixture_count,
     )
 
     results = prepare_results(
