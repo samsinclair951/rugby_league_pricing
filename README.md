@@ -91,9 +91,17 @@ flowchart TD
 
 Expected points formula (in [core.py](src/rugby_league_pricing/features/expected_scores/core.py)):
 
-$$\text{expected\_home\_points} = \text{league\_average\_points} \times \text{home\_attack\_multiplier} \times \text{away\_defence\_multiplier} \times \text{home\_scoring\_factor}$$
+```text
+expected_home_points = league_average_points
+                        × home_attack_multiplier
+                        × away_defence_multiplier
+                        × home_scoring_factor
 
-$$\text{expected\_away\_points} = \text{league\_average\_points} \times \text{away\_attack\_multiplier} \times \text{home\_defence\_multiplier} \times \text{away\_scoring\_factor}$$
+expected_away_points = league_average_points
+                        × away_attack_multiplier
+                        × home_defence_multiplier
+                        × away_scoring_factor
+```
 
 Each expected score combines three independent signals: the league baseline, opponent-adjusted team strength (from `strength_multipliers`), and the venue scoring factor (from `scoring_factors`).
 
