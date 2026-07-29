@@ -1,64 +1,15 @@
-from __future__ import annotations
+"""Core strength-multiplier calculation helpers."""
 
-import sqlite3
+from __future__ import annotations
 
 import pandas as pd
 
-from rugby_league_pricing.utils.sql import upsert_dataframe
-
-DEFAULT_FORM_WINDOW = 5
-DEFAULT_LEAGUE_WINDOW = 50
-DEFAULT_PRIOR_GAMES = 3
-DEFAULT_ITERATIONS = 10
-
-RECENT_FORM_QUERY = """
-    SELECT
-        fixture_id,
-        team_id,
-        opponent_id,
-        is_home,
-        match_date,
-        season,
-        points_for,
-        points_against,
-        history_games_before,
-        recent_points_for_5,
-        recent_points_against_5,
-        recent_games_used_5,
-        recent_points_for_10,
-        recent_points_against_10,
-        recent_games_used_10
-    FROM recent_form
-    ORDER BY
-        match_date,
-        fixture_id,
-        team_id
-"""
-
-
-def load_recent_form(
-    connection: sqlite3.Connection,
-) -> pd.DataFrame:
-    """Load completed team performances and recent-form features."""
-    recent_form = pd.read_sql_query(
-        RECENT_FORM_QUERY,
-        connection,
-    )
-
-    if recent_form.empty:
-        raise ValueError("No recent-form rows were found.")
-
-    recent_form["match_date"] = pd.to_datetime(
-        recent_form["match_date"],
-        errors="raise",
-    )
-
-    return recent_form
+from .constants import DEFAULT_FORM_WINDOW, DEFAULT_ITERATIONS, DEFAULT_PRIOR_GAMES
 
 
 def add_league_average(
     recent_form: pd.DataFrame,
-    league_window: int = DEFAULT_LEAGUE_WINDOW,
+    league_window: int,
 ) -> pd.DataFrame:
     """
     Add the average points scored per team across recent fixtures.
@@ -117,7 +68,7 @@ def add_league_average(
 
 def add_opponent_recent_form(
     recent_form: pd.DataFrame,
-    form_window: int = DEFAULT_FORM_WINDOW,
+    form_window: int,
 ) -> pd.DataFrame:
     """Attach the opponent's pre-match recent-form values."""
     required_columns = {
@@ -182,8 +133,8 @@ def shrink_average(
 
 def add_raw_multipliers(
     recent_form: pd.DataFrame,
-    form_window: int = DEFAULT_FORM_WINDOW,
-    prior_games: int = DEFAULT_PRIOR_GAMES,
+    form_window: int,
+    prior_games: int,
 ) -> pd.DataFrame:
     """
     Calculate pre-match raw attack and defence multipliers.
@@ -198,9 +149,7 @@ def add_raw_multipliers(
     strength = recent_form.copy()
 
     games_column = f"recent_games_used_{form_window}"
-
     points_for_column = f"recent_points_for_{form_window}"
-
     points_against_column = f"recent_points_against_{form_window}"
 
     strength["shrunk_points_for"] = shrink_average(
@@ -228,9 +177,7 @@ def add_raw_multipliers(
     return strength
 
 
-def add_opponent_multipliers(
-    strength: pd.DataFrame,
-) -> pd.DataFrame:
+def add_opponent_multipliers(strength: pd.DataFrame) -> pd.DataFrame:
     """Attach the opponent's current pre-match strength multipliers."""
     columns_to_remove = [
         "opponent_attack_multiplier",
@@ -277,9 +224,7 @@ def add_opponent_multipliers(
     return strength
 
 
-def add_adjusted_performances(
-    strength: pd.DataFrame,
-) -> pd.DataFrame:
+def add_adjusted_performances(strength: pd.DataFrame) -> pd.DataFrame:
     """
     Adjust each performance using the opponent's current strength.
 
@@ -318,45 +263,23 @@ def add_strength_multipliers(
         ]
     ).copy()
 
-    grouped = ordered.groupby(
-        "team_id",
-        sort=False,
-    )
+    grouped = ordered.groupby("team_id", sort=False)
 
     ordered["adjusted_points_for_average"] = grouped["adjusted_points_for"].transform(
-        lambda values: (
-            values.shift(1)
-            .rolling(
-                window=form_window,
-                min_periods=1,
-            )
-            .mean()
-        )
+        lambda values: values.shift(1).rolling(window=form_window, min_periods=1).mean()
     )
 
     ordered["adjusted_points_against_average"] = grouped[
         "adjusted_points_against"
     ].transform(
-        lambda values: (
-            values.shift(1)
-            .rolling(
-                window=form_window,
-                min_periods=1,
-            )
-            .mean()
-        )
+        lambda values: values.shift(1).rolling(window=form_window, min_periods=1).mean()
     )
 
     adjusted_games_used = (
         grouped["adjusted_points_for"]
         .transform(
             lambda values: (
-                values.shift(1)
-                .rolling(
-                    window=form_window,
-                    min_periods=1,
-                )
-                .count()
+                values.shift(1).rolling(window=form_window, min_periods=1).count()
             )
         )
         .fillna(0)
@@ -430,16 +353,10 @@ def iterate_strength_multipliers(
 
     for _ in range(iterations):
         previous_attack = iterative_strength["attack_multiplier"].copy()
-
         previous_defence = iterative_strength["defence_multiplier"].copy()
 
-        iterative_strength = add_opponent_multipliers(
-            strength=iterative_strength,
-        )
-
-        iterative_strength = add_adjusted_performances(
-            strength=iterative_strength,
-        )
+        iterative_strength = add_opponent_multipliers(strength=iterative_strength)
+        iterative_strength = add_adjusted_performances(strength=iterative_strength)
 
         iterative_strength = add_strength_multipliers(
             strength=iterative_strength,
@@ -456,123 +373,3 @@ def iterate_strength_multipliers(
             break
 
     return iterative_strength
-
-
-def build_strength_multipliers(
-    connection: sqlite3.Connection,
-    form_window: int = DEFAULT_FORM_WINDOW,
-    league_window: int = DEFAULT_LEAGUE_WINDOW,
-    prior_games: int = DEFAULT_PRIOR_GAMES,
-    iterations: int = DEFAULT_ITERATIONS,
-) -> pd.DataFrame:
-    """Build opponent-adjusted attack and defence multipliers."""
-    if form_window <= 0:
-        raise ValueError("Form window must be positive.")
-
-    if league_window <= 0:
-        raise ValueError("League window must be positive.")
-
-    if prior_games <= 0:
-        raise ValueError("Prior games must be positive.")
-
-    if iterations <= 0:
-        raise ValueError("Iterations must be positive.")
-
-    recent_form = load_recent_form(
-        connection=connection,
-    )
-
-    recent_form = add_league_average(
-        recent_form=recent_form,
-        league_window=league_window,
-    )
-
-    recent_form = add_opponent_recent_form(
-        recent_form=recent_form,
-        form_window=form_window,
-    )
-
-    strength = add_raw_multipliers(
-        recent_form=recent_form,
-        form_window=form_window,
-        prior_games=prior_games,
-    )
-
-    return iterate_strength_multipliers(
-        strength=strength,
-        form_window=form_window,
-        prior_games=prior_games,
-        iterations=iterations,
-    )
-
-
-def upsert_strength_multipliers(
-    connection: sqlite3.Connection,
-    strength_multipliers: pd.DataFrame,
-) -> int:
-    """Insert or update pre-match strength multipliers."""
-    if strength_multipliers.empty:
-        return 0
-
-    columns = [
-        "fixture_id",
-        "team_id",
-        "opponent_id",
-        "is_home",
-        "match_date",
-        "season",
-        "league_average_points",
-        "attack_multiplier",
-        "defence_multiplier",
-    ]
-
-    missing_columns = set(columns).difference(strength_multipliers.columns)
-
-    if missing_columns:
-        raise ValueError(
-            "Strength multipliers are missing required columns: "
-            f"{sorted(missing_columns)}"
-        )
-
-    duplicate_rows = strength_multipliers.duplicated(subset=["fixture_id", "team_id"])
-
-    if duplicate_rows.any():
-        duplicates = strength_multipliers.loc[
-            duplicate_rows,
-            ["fixture_id", "team_id"],
-        ].to_dict(orient="records")
-
-        raise ValueError(
-            f"Strength multipliers contain duplicate fixture/team rows: {duplicates}"
-        )
-
-    return upsert_dataframe(
-        connection=connection,
-        dataframe=strength_multipliers,
-        table_name="strength_multipliers",
-        columns=columns,
-        conflict_columns=["fixture_id", "team_id"],
-        update_timestamp=True,
-    )
-
-
-def rebuild_strength_multipliers(
-    connection: sqlite3.Connection,
-    form_window: int = DEFAULT_FORM_WINDOW,
-    league_window: int = DEFAULT_LEAGUE_WINDOW,
-    prior_games: int = DEFAULT_PRIOR_GAMES,
-    iterations: int = DEFAULT_ITERATIONS,
-) -> int:
-    """Build and persist all available strength multipliers."""
-    strength_multipliers = build_strength_multipliers(
-        connection=connection,
-        form_window=form_window,
-        league_window=league_window,
-        prior_games=prior_games,
-        iterations=iterations,
-    )
-
-    return upsert_strength_multipliers(
-        connection=connection,
-        strength_multipliers=strength_multipliers,
-    )
