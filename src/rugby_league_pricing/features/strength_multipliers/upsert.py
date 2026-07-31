@@ -16,8 +16,12 @@ UPSERT_COLUMNS = [
     "match_date",
     "season",
     "league_average_points",
+    "raw_attack_multiplier",
+    "raw_defence_multiplier",
     "attack_multiplier",
     "defence_multiplier",
+    "scaled_attack_multiplier",
+    "scaled_defence_multiplier",
 ]
 
 

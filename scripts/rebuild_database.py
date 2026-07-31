@@ -52,13 +52,6 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--database-path",
-        type=Path,
-        default=DEFAULT_DATABASE_PATH,
-        help=f"Database path. Default: {DEFAULT_DATABASE_PATH}",
-    )
-
-    parser.add_argument(
         "--reset",
         action="store_true",
         help="Delete the existing database before rebuilding it.",
@@ -73,7 +66,7 @@ def main() -> None:
     if args.start_season > args.end_season:
         raise ValueError("--start-season cannot be later than --end-season")
 
-    database_path = args.database_path.resolve()
+    database_path = DEFAULT_DATABASE_PATH.resolve()
 
     if args.reset and database_path.exists():
         database_path.unlink()
@@ -88,18 +81,25 @@ def main() -> None:
     run_module("scripts.initialise_database")
 
     run_module(
+        "scripts.fixtures.rugby_league_project.ingest_fixtures",
+        "--start-season",
+        str(args.start_season),
+        "--end-season",
+        str(args.end_season),
+    )
+
+    run_module(
         "scripts.results.rugby_league_project.ingest_results",
         "--start-season",
         str(args.start_season),
         "--end-season",
         str(args.end_season),
-        "--database-path",
-        str(database_path),
     )
 
     run_module("scripts.features.rebuild_recent_form")
     run_module("scripts.features.rebuild_strength_multipliers")
     run_module("scripts.features.rebuild_expected_scores")
+    run_module("scripts.features.rebuild_predicted_scores")
     run_module("scripts.pricing.rebuild_historical_matrix")
 
     print(f"\nDatabase rebuild complete: {database_path}")

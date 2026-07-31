@@ -133,6 +133,7 @@ Each expected score combines three independent signals: the league baseline, opp
 
 - Match pricing model
 - Days since previous game
+- Weather/Seasonality
 - Player ratings
 - Team news analysis
 - Dashboard
