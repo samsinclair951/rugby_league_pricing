@@ -1,6 +1,5 @@
 # Local databases
 data/*.db
-data/negative_binomial_backtest.sqlite
 
 # Python cache
 __pycache__/
@@ -12,4 +11,5 @@ __pycache__/
 # Virtual environments
 .venv/
 venv/
+
 data/negative_binomial_backtest.sqlite
