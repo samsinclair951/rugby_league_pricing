@@ -1,5 +1,3 @@
-"""Build and rebuild strength-multiplier data from database inputs."""
-
 from __future__ import annotations
 
 import sqlite3
@@ -20,6 +18,10 @@ from .core import (
     iterate_strength_multipliers,
 )
 from .upsert import upsert_strength_multipliers
+
+DEFAULT_CURVE_CAP_START = 0.75
+DEFAULT_CURVE_MAX_EDIT = 0.40
+DEFAULT_CURVE_LEARNING_RATE = 0.80
 
 
 def load_recent_form(connection: sqlite3.Connection) -> pd.DataFrame:
@@ -46,6 +48,9 @@ def build_strength_multipliers(
     league_window: int = DEFAULT_LEAGUE_WINDOW,
     prior_games: int = DEFAULT_PRIOR_GAMES,
     iterations: int = DEFAULT_ITERATIONS,
+    curve_cap_start: float = DEFAULT_CURVE_CAP_START,
+    curve_max_edit: float = DEFAULT_CURVE_MAX_EDIT,
+    curve_learning_rate: float = DEFAULT_CURVE_LEARNING_RATE,
 ) -> pd.DataFrame:
     """Build opponent-adjusted attack and defence multipliers."""
     if form_window <= 0:
@@ -59,6 +64,15 @@ def build_strength_multipliers(
 
     if iterations <= 0:
         raise ValueError("Iterations must be positive.")
+
+    if curve_cap_start <= 0:
+        raise ValueError("Curve cap start must be positive.")
+
+    if curve_max_edit <= 0:
+        raise ValueError("Curve maximum edit must be positive.")
+
+    if curve_learning_rate <= 0:
+        raise ValueError("Curve learning rate must be positive.")
 
     recent_form = load_recent_form(connection=connection)
 
@@ -92,6 +106,9 @@ def rebuild_strength_multipliers(
     league_window: int = DEFAULT_LEAGUE_WINDOW,
     prior_games: int = DEFAULT_PRIOR_GAMES,
     iterations: int = DEFAULT_ITERATIONS,
+    curve_cap_start: float = DEFAULT_CURVE_CAP_START,
+    curve_max_edit: float = DEFAULT_CURVE_MAX_EDIT,
+    curve_learning_rate: float = DEFAULT_CURVE_LEARNING_RATE,
 ) -> int:
     """Build and persist all available strength multipliers."""
     strength_multipliers = build_strength_multipliers(
@@ -100,6 +117,9 @@ def rebuild_strength_multipliers(
         league_window=league_window,
         prior_games=prior_games,
         iterations=iterations,
+        curve_cap_start=curve_cap_start,
+        curve_max_edit=curve_max_edit,
+        curve_learning_rate=curve_learning_rate,
     )
 
     return upsert_strength_multipliers(

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 
 - notebook analysing best use of a poisson distribution to fit scores
 
+## [2.0.2] Expected Scores Redo
+
+- notebook analysis expected scores & strength multipliers
+- add curved scaling to strength multipliers
+- future expected scores script
+
 ## [2.0.1] DB Rebuild script
 
 - rebuild_db script file (in case we have to delete and re-initialise)
