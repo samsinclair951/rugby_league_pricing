@@ -24,8 +24,8 @@ def _load_strength_multipliers(connection: sqlite3.Connection) -> pd.DataFrame:
             season,
             team_id,
             is_home,
-            attack_multiplier,
-            defence_multiplier
+            scaled_attack_multiplier AS attack_multiplier,
+            scaled_defence_multiplier AS defence_multiplier
         FROM strength_multipliers
         ORDER BY match_date, fixture_id, is_home DESC
         """,
