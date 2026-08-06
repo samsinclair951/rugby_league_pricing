@@ -1,6 +1,9 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.1.0] poisson scoring matrix analysis
+
+- notebook analysing best use of a poisson distribution to fit scores
 
 ## [2.0.2] Expected Scores Redo
 
