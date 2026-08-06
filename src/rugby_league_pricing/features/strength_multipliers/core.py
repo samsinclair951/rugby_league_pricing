@@ -1,7 +1,6 @@
-"""Core strength-multiplier calculation helpers."""
-
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 from .constants import DEFAULT_FORM_WINDOW, DEFAULT_ITERATIONS, DEFAULT_PRIOR_GAMES
@@ -131,10 +130,45 @@ def shrink_average(
     )
 
 
+def smooth_scale_multiplier(
+    raw_multiplier: pd.Series,
+    cap_start: float,
+    max_edit: float,
+    learning_rate: float,
+    neutral_multiplier: float = 1.0,
+) -> pd.Series:
+    """Curve multiplier changes away from the neutral value."""
+    if cap_start <= 0:
+        raise ValueError("Curve cap start must be positive.")
+
+    if max_edit <= 0:
+        raise ValueError("Curve maximum edit must be positive.")
+
+    if learning_rate <= 0:
+        raise ValueError("Curve learning rate must be positive.")
+
+    raw_edit = (
+        raw_multiplier - neutral_multiplier
+    ) * learning_rate
+
+    curve_position = (
+        raw_edit.abs() / cap_start
+    ).clip(upper=1.0)
+
+    scaled_magnitude = max_edit * (
+        (2.0 * curve_position) - curve_position.pow(2)
+    )
+
+    return (
+        neutral_multiplier
+        + np.sign(raw_edit) * scaled_magnitude
+    )
+
+
 def add_raw_multipliers(
     recent_form: pd.DataFrame,
-    form_window: int,
-    prior_games: int,
+    form_window: int = DEFAULT_FORM_WINDOW,
+    prior_games: int = DEFAULT_PRIOR_GAMES,
 ) -> pd.DataFrame:
     """
     Calculate pre-match raw attack and defence multipliers.
@@ -158,22 +192,20 @@ def add_raw_multipliers(
         league_average=strength["league_average_points"],
         prior_games=prior_games,
     )
-
     strength["shrunk_points_against"] = shrink_average(
         observed_average=strength[points_against_column],
         games_used=strength[games_column],
         league_average=strength["league_average_points"],
         prior_games=prior_games,
     )
-
     strength["raw_attack_multiplier"] = (
-        strength["shrunk_points_for"] / strength["league_average_points"]
+        strength["shrunk_points_for"]
+        / strength["league_average_points"]
     )
-
     strength["raw_defence_multiplier"] = (
-        strength["shrunk_points_against"] / strength["league_average_points"]
+        strength["shrunk_points_against"]
+        / strength["league_average_points"]
     )
-
     return strength
 
 
@@ -318,6 +350,9 @@ def iterate_strength_multipliers(
     prior_games: int = DEFAULT_PRIOR_GAMES,
     iterations: int = DEFAULT_ITERATIONS,
     tolerance: float = 0.0001,
+    curve_cap_start: float = 0.75,
+    curve_max_edit: float = 0.40,
+    curve_learning_rate: float = 0.80,
 ) -> pd.DataFrame:
     """
     Repeatedly refine attack and defence strength multipliers.
@@ -372,4 +407,18 @@ def iterate_strength_multipliers(
         if maximum_change < tolerance:
             break
 
+
+    iterative_strength["scaled_attack_multiplier"] = smooth_scale_multiplier(
+        raw_multiplier=iterative_strength["attack_multiplier"],
+        cap_start=curve_cap_start,
+        max_edit=curve_max_edit,
+        learning_rate=curve_learning_rate,
+    )
+
+    iterative_strength["scaled_defence_multiplier"] = smooth_scale_multiplier(
+        raw_multiplier=iterative_strength["defence_multiplier"],
+        cap_start=curve_cap_start,
+        max_edit=curve_max_edit,
+        learning_rate=curve_learning_rate,
+    )
     return iterative_strength

@@ -9,11 +9,6 @@ from typing import Any
 
 import pandas as pd
 
-from scripts.fixtures.rugby_league_project.ingest_fixtures import (
-    prepare_fixtures,
-    upsert_fixtures,
-)
-
 PROJECT_ROOT = next(
     parent
     for parent in Path(__file__).resolve().parents
@@ -34,7 +29,6 @@ from rugby_league_project.teams_mapping import (
 )
 
 from rugby_league_pricing.database.connection import (
-    DEFAULT_DATABASE_PATH,
     get_connection,
 )
 from rugby_league_pricing.utils.fixtures import build_fixture_id
@@ -163,21 +157,6 @@ def ingest_season(
         create_missing=True,
     )
 
-    fixtures = prepare_fixtures(
-        mapped_matches=mapped_matches,
-    )
-
-    fixture_count = upsert_fixtures(
-        connection=connection,
-        fixtures=fixtures,
-    )
-
-    LOGGER.info(
-        "Season %s: inserted or updated %s fixtures",
-        season,
-        fixture_count,
-    )
-
     results = prepare_results(
         mapped_matches=mapped_matches,
     )
@@ -245,13 +224,6 @@ def parse_arguments() -> argparse.Namespace:
         help="Final season to ingest, for example 2026.",
     )
 
-    parser.add_argument(
-        "--database-path",
-        type=Path,
-        default=DEFAULT_DATABASE_PATH,
-        help=(f"SQLite database path. Default: {DEFAULT_DATABASE_PATH}"),
-    )
-
     return parser.parse_args()
 
 
@@ -261,19 +233,9 @@ def main() -> None:
     if args.start_season > args.end_season:
         raise ValueError("--start-season cannot be later than --end-season")
 
-    if not args.database_path.exists():
-        raise FileNotFoundError(f"Database does not exist: {args.database_path}")
-
-    LOGGER.info(
-        "Using database: %s",
-        args.database_path,
-    )
-
     total_ingested = 0
 
-    with get_connection(
-        args.database_path,
-    ) as connection:
+    with get_connection() as connection:
         connection.execute("PRAGMA foreign_keys = ON")
 
         validate_database(
