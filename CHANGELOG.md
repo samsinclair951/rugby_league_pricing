@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [2.2.0] negative binomial & bivariate poisson analyses
+
+- notebook analysing similar use of negative binomial & bivariate poisson matrices.
+- blending with tilted historical emperical matrix to find the best blend.
+
 ## [2.1.0] poisson scoring matrix analysis
 
 - notebook analysing best use of a poisson distribution to fit scores
