@@ -5,6 +5,14 @@ from datetime import UTC, datetime
 
 import pandas as pd
 
+# TODO want to be able to have some offset or knowledge of previous team news in team strengths
+# need to be able to pre-adjust old strengths and post adjust new strengths based on team news, injuries, suspensions, etc.
+# ie. if a big player is out in the previous week and we adjust on team news, but back the following week, 
+# the strength the prev week will be lower after TN but and the next week that should be included in the 
+# strength multiplier, to reduce the effect of the previous week being lower than it should have been.
+
+# TODO reduce & tidy this file, likely shared logic and definitely constants to be moved.
+
 FUTURE_FIXTURES_QUERY = """
     SELECT
         f.fixture_id,
