@@ -1,13 +1,16 @@
-from pathlib import Path
+from __future__ import annotations
 
 import streamlit as st
 
-from rugby_league_pricing.ratings.simple_tries_pred import (
-    fit_poisson_model,
-    load_results,
-    predict_match,
-    prepare_model_data,
+from dashboard.data import (
+    load_fixture,
+    load_last_results,
+    load_latest_historical_matrix,
+    load_upcoming_fixtures,
 )
+from dashboard.formatting import fixture_date_heading, short_result_rows, signed_line
+from dashboard.pricing import price_fixture
+
 
 st.set_page_config(
     page_title="Rugby League Pricing",
@@ -15,113 +18,167 @@ st.set_page_config(
     layout="wide",
 )
 
-DATA_PATH = Path("data/sample_results/slres_unstacked.csv")
+
+@st.cache_data(ttl=60)
+def _upcoming_fixtures():
+    return load_upcoming_fixtures(days=7)
 
 
-@st.cache_data
-def get_results():
-    return load_results(DATA_PATH)
+@st.cache_data(ttl=60)
+def _fixture(fixture_id: str):
+    return load_fixture(fixture_id)
+
+
+@st.cache_data(ttl=60)
+def _last_results(team_id: int, before_date):
+    return load_last_results(team_id, before_date=before_date, limit=3)
 
 
 @st.cache_resource
-def get_model(year: int):
-    results = get_results()
-    model_data = prepare_model_data(results, year)
-    return fit_poisson_model(model_data)
+def _historical_matrix():
+    return load_latest_historical_matrix()
 
 
-st.title("🏉 Rugby League Match Predictor")
+def show_fixture_list() -> None:
+    st.title("Rugby League Prices")
+    st.caption("Upcoming fixtures with model expected scores")
 
-try:
-    results = get_results()
-except Exception as exc:
-    st.error(f"Could not load results: {exc}")
-    st.stop()
+    fixtures = _upcoming_fixtures()
 
-available_years = sorted(results["year"].unique(), reverse=True)
+    if fixtures.empty:
+        st.info("No fixtures with expected scores were found in the next seven days.")
+        return
 
-year = st.selectbox(
-    "Season",
-    options=available_years,
-)
+    for match_date, day_fixtures in fixtures.groupby(fixtures["match_date"].dt.date):
+        st.subheader(fixture_date_heading(day_fixtures.iloc[0]["match_date"]))
 
-season_results = results.loc[results["year"].eq(year)]
+        for fixture in day_fixtures.itertuples(index=False):
+            label = f"{fixture.home_team} vs {fixture.away_team}"
+            if fixture.kick_off:
+                label = f"{label}  ·  {fixture.kick_off}"
 
-teams = sorted(set(season_results["home"]).union(season_results["away"]))
+            if st.button(label, key=f"fixture-{fixture.fixture_id}", use_container_width=True):
+                st.session_state["selected_fixture_id"] = fixture.fixture_id
+                st.rerun()
 
-col1, col2 = st.columns(2)
 
-with col1:
-    home_team = st.selectbox(
-        "Home team",
-        options=teams,
-        index=teams.index("Wigan") if "Wigan" in teams else 0,
+def show_fixture_detail(fixture_id: str) -> None:
+    if st.button("← Back to fixtures"):
+        st.session_state.pop("selected_fixture_id", None)
+        st.rerun()
+
+    fixture = _fixture(fixture_id)
+    fixture_date = fixture["match_date"].date()
+
+    st.caption(fixture_date_heading(fixture["match_date"]))
+    st.title(f"{fixture['home_team']} vs {fixture['away_team']}")
+
+    expected_home = float(fixture["expected_home_score"])
+    expected_away = float(fixture["expected_away_score"])
+
+    home_col, away_col = st.columns(2)
+    with home_col:
+        st.metric(fixture["home_team"], f"{expected_home:.1f}", "Expected points")
+    with away_col:
+        st.metric(fixture["away_team"], f"{expected_away:.1f}", "Expected points")
+
+    st.divider()
+    st.subheader("Recent results")
+
+    home_results = _last_results(int(fixture["home_team_id"]), fixture_date)
+    away_results = _last_results(int(fixture["away_team_id"]), fixture_date)
+
+    home_col, away_col = st.columns(2)
+    with home_col:
+        st.markdown(f"**{fixture['home_team']} — last 3**")
+        st.dataframe(
+            short_result_rows(home_results),
+            hide_index=True,
+            use_container_width=True,
+        )
+    with away_col:
+        st.markdown(f"**{fixture['away_team']} — last 3**")
+        st.dataframe(
+            short_result_rows(away_results),
+            hide_index=True,
+            use_container_width=True,
+        )
+
+    prices = price_fixture(
+        historical_matrix=_historical_matrix(),
+        expected_home_score=expected_home,
+        expected_away_score=expected_away,
     )
 
-with col2:
-    away_options = [team for team in teams if team != home_team]
+    st.divider()
+    st.subheader("Match odds")
 
-    default_away_index = (
-        away_options.index("St Helens") if "St Helens" in away_options else 0
+    match_odds = prices["match_odds"].copy()
+    match_odds["Selection"] = match_odds["selection"].map(
+        {
+            "home": fixture["home_team"],
+            "draw": "Draw",
+            "away": fixture["away_team"],
+        }
     )
-
-    away_team = st.selectbox(
-        "Away team",
-        options=away_options,
-        index=default_away_index,
-    )
-
-if st.button("Generate prediction", type="primary"):
-    try:
-        with st.spinner("Fitting model and generating prediction..."):
-            model = get_model(year)
-
-            prediction = predict_match(
-                model=model,
-                home_team=home_team,
-                away_team=away_team,
-            )
-
-    except Exception as exc:
-        st.error(f"Prediction failed: {exc}")
-        st.stop()
-
-    st.subheader(f"{home_team} vs {away_team}")
-
-    metric1, metric2 = st.columns(2)
-
-    metric1.metric(
-        f"{home_team} expected tries",
-        f"{prediction.expected_home_tries:.2f}",
-    )
-
-    metric2.metric(
-        f"{away_team} expected tries",
-        f"{prediction.expected_away_tries:.2f}",
-    )
-
-    st.subheader("Result probabilities")
-
-    home_col, draw_col, away_col = st.columns(3)
-
-    home_col.metric(
-        f"{home_team} win",
-        f"{prediction.home_win_probability:.1%}",
-    )
-
-    draw_col.metric(
-        "Draw",
-        f"{prediction.draw_probability:.1%}",
-    )
-
-    away_col.metric(
-        f"{away_team} win",
-        f"{prediction.away_win_probability:.1%}",
-    )
-
-    st.subheader("Tries probability matrix")
+    match_odds["Probability"] = match_odds["probability"].map(lambda value: f"{value:.1%}")
+    match_odds["True Price"] = match_odds["decimal_price"].map(lambda value: f"{value:.2f}")
 
     st.dataframe(
-        prediction.probability_matrix.style.format("{:.2%}"),
+        match_odds[["Selection", "Probability", "True Price"]],
+        hide_index=True,
         use_container_width=True,
     )
+
+    handicap_col, totals_col = st.columns(2)
+
+    with handicap_col:
+        st.subheader("Handicap")
+        st.caption(
+            f"Mainline: {fixture['home_team']} "
+            f"{signed_line(float(prices['main_handicap']))}"
+        )
+
+        handicaps = prices["handicaps"].copy()
+        handicaps["Line"] = handicaps["line"].map(signed_line)
+        handicaps[f"{fixture['home_team']} price"] = handicaps["home_price"].map(
+            lambda value: f"{value:.2f}"
+        )
+        handicaps[f"{fixture['away_team']} price"] = handicaps["away_price"].map(
+            lambda value: f"{value:.2f}"
+        )
+
+        st.dataframe(
+            handicaps[
+                [
+                    "Line",
+                    f"{fixture['home_team']} price",
+                    f"{fixture['away_team']} price",
+                ]
+            ],
+            hide_index=True,
+            use_container_width=True,
+        )
+
+    with totals_col:
+        st.subheader("Totals")
+        st.caption(f"Mainline: {float(prices['main_total']):.1f}")
+
+        totals = prices["totals"].copy()
+        totals["Line"] = totals["line"].map(lambda value: f"{value:.1f}")
+        totals["Over"] = totals["over_price"].map(lambda value: f"{value:.2f}")
+        totals["Under"] = totals["under_price"].map(lambda value: f"{value:.2f}")
+
+        st.dataframe(
+            totals[["Line", "Over", "Under"]],
+            hide_index=True,
+            use_container_width=True,
+        )
+
+
+selected_fixture_id = st.session_state.get("selected_fixture_id")
+
+if selected_fixture_id:
+    show_fixture_detail(selected_fixture_id)
+else:
+    show_fixture_list()

@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [3.0.0] Pricing - Ice to Eskimos
+
+- Base & Main Markets Pricers
+- Basic historical matrix pricing
+
 ## [2.1.0] poisson scoring matrix analysis
 
 - notebook analysing best use of a poisson distribution to fit scores
