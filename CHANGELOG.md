@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [2.1.1] git attributes
+
+- normalize line endings with git attributes
+
 ## [2.1.0] poisson scoring matrix analysis
 
 - notebook analysing best use of a poisson distribution to fit scores
