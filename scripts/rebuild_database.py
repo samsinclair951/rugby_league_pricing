@@ -96,6 +96,14 @@ def main() -> None:
         str(args.end_season),
     )
 
+    run_module(
+            "scripts.teamsheets.rugby_league_project.ingest_teamsheets",
+            "--start-season",
+            str(args.start_season),
+            "--end-season",
+            str(args.end_season),
+        )
+
     run_module("scripts.features.rebuild_recent_form")
     run_module("scripts.features.rebuild_strength_multipliers")
     run_module("scripts.features.rebuild_expected_scores")

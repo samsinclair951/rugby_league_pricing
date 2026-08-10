@@ -84,6 +84,83 @@ def initialise_database() -> None:
                     REFERENCES teams(team_id)
             );
 
+            CREATE TABLE IF NOT EXISTS players (
+                player_id TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                season INTEGER NOT NULL,
+                team_id INTEGER NOT NULL,
+                primary_position TEXT,
+                active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+                source_name TEXT NOT NULL,
+                source_player_id TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                PRIMARY KEY (
+                    player_id,
+                    season,
+                    team_id
+                ),
+
+                FOREIGN KEY (team_id)
+                    REFERENCES teams(team_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_players_season_team
+                ON players(season, team_id);
+
+            CREATE INDEX IF NOT EXISTS idx_players_source_player
+                ON players(source_name, source_player_id);
+
+
+            CREATE TABLE IF NOT EXISTS teamsheets (
+                fixture_id TEXT NOT NULL,
+                season INTEGER NOT NULL,
+                team_id INTEGER NOT NULL,
+                player_id TEXT NOT NULL,
+                side TEXT NOT NULL CHECK (side IN ('home', 'away')),
+                position TEXT,
+                lineup_order INTEGER NOT NULL CHECK (lineup_order BETWEEN 1 AND 17),
+                is_starting INTEGER NOT NULL CHECK (is_starting IN (0, 1)),
+                source_name TEXT NOT NULL,
+                source_match_id TEXT,
+                source_url TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                PRIMARY KEY (
+                    fixture_id,
+                    team_id,
+                    player_id
+                ),
+
+                FOREIGN KEY (fixture_id)
+                    REFERENCES fixtures(fixture_id),
+
+                FOREIGN KEY (team_id)
+                    REFERENCES teams(team_id),
+
+                FOREIGN KEY (
+                    player_id,
+                    season,
+                    team_id
+                )
+                    REFERENCES players(
+                        player_id,
+                        season,
+                        team_id
+                    )
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_teamsheets_fixture
+                ON teamsheets(fixture_id);
+
+            CREATE INDEX IF NOT EXISTS idx_teamsheets_player
+                ON teamsheets(player_id, season);
+
+            CREATE INDEX IF NOT EXISTS idx_teamsheets_team_season
+                ON teamsheets(team_id, season);
+
             CREATE TABLE IF NOT EXISTS recent_form (
                 recent_form_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 fixture_id TEXT NOT NULL,

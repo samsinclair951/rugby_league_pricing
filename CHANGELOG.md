@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.0] Players DB & Teamsheets
+
+- scrapes teamsheets and creates a teamsheets table in db
+- create a base players db
+
 ## [2.1.1] git attributes
 
 - normalize line endings with git attributes
