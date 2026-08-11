@@ -14,6 +14,8 @@ class MainlineTotalsPricer(BasePricer):
     def __init__(
         self,
         score_matrix: np.ndarray,
+        expected_home_score: float | None = None,
+        expected_away_score: float | None = None,
         *,
         line_range: float = 20.0,
     ) -> None:
@@ -22,7 +24,23 @@ class MainlineTotalsPricer(BasePricer):
         if line_range <= 0:
             raise ValueError("line_range must be positive")
 
+        # Kept for backwards compatibility with older call sites.
+        self.expected_home_score = expected_home_score
+        self.expected_away_score = expected_away_score
         self.line_range = line_range
+
+    @property
+    def mainline(self) -> float:
+        """Return the total line closest to a 50/50 over-under market."""
+        prices = self.price_all()
+        return float(
+            min(
+                prices,
+                key=lambda line: abs(
+                    prices[line][0].probability - 0.5
+                ),
+            )
+        )
 
     def price_all(self) -> dict[float, list[MarketPrice]]:
         """Price total lines around the expected match total."""
@@ -80,12 +98,4 @@ class MainlineTotalsPricer(BasePricer):
     def price_mainline(self) -> list[MarketPrice]:
         """Return the total line closest to a 50/50 market."""
         prices = self.price_all()
-
-        main_line = min(
-            prices,
-            key=lambda line: abs(
-                prices[line][0].probability - 0.5
-            ),
-        )
-
-        return prices[main_line]
+        return prices[self.mainline]

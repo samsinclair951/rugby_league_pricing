@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import base64
+import re
+from pathlib import Path
+
 import streamlit as st
 
 from dashboard.data import (
@@ -12,9 +16,20 @@ from dashboard.formatting import fixture_date_heading, short_result_rows, signed
 from dashboard.pricing import price_fixture
 
 
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+TEAM_LOGOS_DIR = ASSETS_DIR / "teams"
+STEEDEN_BALL_PATH = ASSETS_DIR / "steeden_ball.png"
+SUPER_LEAGUE_LOGO_PATH = ASSETS_DIR / "super_league_logo.png"
+HERO_IMAGE_PATH = ASSETS_DIR / "hero_players.jpg"
+
+
+def _page_icon() -> str:
+    return str(STEEDEN_BALL_PATH) if STEEDEN_BALL_PATH.exists() else "🏉"
+
+
 st.set_page_config(
-    page_title="Rugby League Pricing",
-    page_icon="🏉",
+    page_title="SoftyTips",
+    page_icon=_page_icon(),
     layout="wide",
 )
 
@@ -39,8 +54,218 @@ def _historical_matrix():
     return load_latest_historical_matrix()
 
 
+@st.cache_data(show_spinner=False)
+def _image_data_uri(path: str, modified_ns: int) -> str:
+    image_path = Path(path)
+    suffix = image_path.suffix.lower()
+
+    mime_type = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+        ".svg": "image/svg+xml",
+    }.get(suffix, "application/octet-stream")
+
+    encoded = base64.b64encode(image_path.read_bytes()).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def _asset_data_uri(path: Path) -> str | None:
+    if not path.exists() or not path.is_file():
+        return None
+    return _image_data_uri(str(path), path.stat().st_mtime_ns)
+
+
+def _team_logo_path(team_name: str) -> Path | None:
+    slug = re.sub(r"[^a-z0-9]+", "_", team_name.strip().lower()).strip("_")
+
+    for extension in ("png", "webp", "jpg", "jpeg", "svg"):
+        candidate = TEAM_LOGOS_DIR / f"{slug}.{extension}"
+        if candidate.exists():
+            return candidate
+
+    return None
+
+
+def _inject_brand_styles() -> None:
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background:
+                radial-gradient(circle at 20% 10%, #ffeee0 0%, #fff8ef 30%, transparent 55%),
+                radial-gradient(circle at 90% 5%, #d7f0ff 0%, #f5fbff 25%, transparent 45%),
+                #fcfaf7;
+        }
+
+        .softytips-hero {
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid #d6d1c7;
+            background: linear-gradient(135deg, #0a2836 0%, #254e68 40%, #d95f28 100%);
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+
+        .softytips-hero img {
+            display: block;
+            width: 100%;
+            max-height: 360px;
+            object-fit: cover;
+            filter: saturate(1.05) contrast(1.05);
+        }
+
+        .softytips-hero-copy {
+            padding: 1rem 1.2rem 1.1rem;
+        }
+
+        .softytips-kicker {
+            letter-spacing: 0.08em;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            opacity: 0.92;
+            margin-bottom: 0.3rem;
+        }
+
+        .softytips-heading {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        .softytips-sub {
+            margin-top: 0.35rem;
+            margin-bottom: 0;
+            font-size: 1rem;
+            opacity: 0.95;
+        }
+
+        .softytips-loader {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.9rem;
+            margin: 0.4rem 0 0.7rem;
+            border-radius: 12px;
+            background: #f5f7f9;
+            border: 1px solid #d2dae2;
+            color: #274356;
+            font-weight: 600;
+        }
+
+        .softytips-loader img {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            animation: softytips-spin 1.1s linear infinite;
+        }
+
+        .team-fallback {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #f0e7da, #e0d2bc);
+            border: 1px solid #d0c4b2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.86rem;
+            font-weight: 800;
+            color: #3f3528;
+            margin-top: 0.1rem;
+        }
+
+        @keyframes softytips-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _render_brand_header() -> None:
+    super_league_uri = _asset_data_uri(SUPER_LEAGUE_LOGO_PATH)
+    hero_uri = _asset_data_uri(HERO_IMAGE_PATH)
+
+    left_col, right_col = st.columns([4, 1])
+
+    with left_col:
+        if hero_uri:
+            st.markdown(
+                f"""
+                <div class="softytips-hero">
+                    <img src="{hero_uri}" alt="SoftyTips hero" />
+                    <div class="softytips-hero-copy">
+                        <div class="softytips-kicker">Rugby League Model Hub</div>
+                        <h1 class="softytips-heading">SoftyTips</h1>
+                        <p class="softytips-sub">Upcoming fixtures, fair prices, and market-ready score distributions.</p>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                """
+                <div class="softytips-hero">
+                    <div class="softytips-hero-copy" style="padding: 1.6rem 1.4rem 1.8rem;">
+                        <div class="softytips-kicker">Rugby League Model Hub</div>
+                        <h1 class="softytips-heading">SoftyTips</h1>
+                        <p class="softytips-sub">Add app/assets/hero_players.jpg to use a custom opening image.</p>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    with right_col:
+        if super_league_uri:
+            st.image(super_league_uri, width=150)
+        else:
+            st.caption("Add app/assets/super_league_logo.png for league branding")
+
+
+def _render_team_badge(team_name: str, size: int = 54) -> None:
+    logo_path = _team_logo_path(team_name)
+    if logo_path is not None:
+        st.image(str(logo_path), width=size)
+        return
+
+    initials = "".join(part[0] for part in team_name.split()[:2]).upper()
+    st.markdown(
+        f"<div class='team-fallback'>{initials}</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def _start_loader(message: str):
+    placeholder = st.empty()
+    steeden_uri = _asset_data_uri(STEEDEN_BALL_PATH)
+
+    if steeden_uri:
+        placeholder.markdown(
+            f"""
+            <div class="softytips-loader">
+                <img src="{steeden_uri}" alt="Loading" />
+                <span>{message}</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        placeholder.info(message)
+
+    return placeholder
+
+
 def show_fixture_list() -> None:
-    st.title("Rugby League Prices")
+    _inject_brand_styles()
+    _render_brand_header()
     st.caption("Upcoming fixtures with model expected scores")
 
     fixtures = _upcoming_fixtures()
@@ -57,12 +282,21 @@ def show_fixture_list() -> None:
             if fixture.kick_off:
                 label = f"{label}  ·  {fixture.kick_off}"
 
-            if st.button(label, key=f"fixture-{fixture.fixture_id}", use_container_width=True):
-                st.session_state["selected_fixture_id"] = fixture.fixture_id
-                st.rerun()
+            home_col, middle_col, away_col = st.columns([1, 7, 1])
+            with home_col:
+                _render_team_badge(fixture.home_team)
+            with middle_col:
+                if st.button(label, key=f"fixture-{fixture.fixture_id}", width="stretch"):
+                    st.session_state["selected_fixture_id"] = fixture.fixture_id
+                    st.rerun()
+            with away_col:
+                _render_team_badge(fixture.away_team)
 
 
 def show_fixture_detail(fixture_id: str) -> None:
+    _inject_brand_styles()
+    _render_brand_header()
+
     if st.button("← Back to fixtures"):
         st.session_state.pop("selected_fixture_id", None)
         st.rerun()
@@ -78,8 +312,10 @@ def show_fixture_detail(fixture_id: str) -> None:
 
     home_col, away_col = st.columns(2)
     with home_col:
+        _render_team_badge(fixture["home_team"], size=70)
         st.metric(fixture["home_team"], f"{expected_home:.1f}", "Expected points")
     with away_col:
+        _render_team_badge(fixture["away_team"], size=70)
         st.metric(fixture["away_team"], f"{expected_away:.1f}", "Expected points")
 
     st.divider()
@@ -90,25 +326,29 @@ def show_fixture_detail(fixture_id: str) -> None:
 
     home_col, away_col = st.columns(2)
     with home_col:
-        st.markdown(f"**{fixture['home_team']} — last 3**")
+        st.markdown(f"**{fixture['home_team']} - last 3**")
         st.dataframe(
             short_result_rows(home_results),
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
     with away_col:
-        st.markdown(f"**{fixture['away_team']} — last 3**")
+        st.markdown(f"**{fixture['away_team']} - last 3**")
         st.dataframe(
             short_result_rows(away_results),
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
 
-    prices = price_fixture(
-        historical_matrix=_historical_matrix(),
-        expected_home_score=expected_home,
-        expected_away_score=expected_away,
-    )
+    loader = _start_loader("Spinning the Steeden and building fixture markets...")
+    try:
+        prices = price_fixture(
+            historical_matrix=_historical_matrix(),
+            expected_home_score=expected_home,
+            expected_away_score=expected_away,
+        )
+    finally:
+        loader.empty()
 
     st.divider()
     st.subheader("Match odds")
@@ -127,7 +367,7 @@ def show_fixture_detail(fixture_id: str) -> None:
     st.dataframe(
         match_odds[["Selection", "Probability", "True Price"]],
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
     )
 
     handicap_col, totals_col = st.columns(2)
@@ -157,7 +397,7 @@ def show_fixture_detail(fixture_id: str) -> None:
                 ]
             ],
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
 
     with totals_col:
@@ -172,7 +412,7 @@ def show_fixture_detail(fixture_id: str) -> None:
         st.dataframe(
             totals[["Line", "Over", "Under"]],
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
 
 
