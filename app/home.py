@@ -28,7 +28,7 @@ def _page_icon() -> str:
 
 
 st.set_page_config(
-    page_title="SoftyTips",
+    page_title="RL Pricing",
     page_icon=_page_icon(),
     layout="wide",
 )
@@ -99,7 +99,7 @@ def _inject_brand_styles() -> None:
                 #fcfaf7;
         }
 
-        .softytips-hero {
+        .rl_pricing-hero {
             border-radius: 18px;
             overflow: hidden;
             border: 1px solid #d6d1c7;
@@ -108,7 +108,7 @@ def _inject_brand_styles() -> None:
             margin-bottom: 1rem;
         }
 
-        .softytips-hero img {
+        .rl_pricing-hero img {
             display: block;
             width: 100%;
             max-height: 360px;
@@ -116,11 +116,11 @@ def _inject_brand_styles() -> None:
             filter: saturate(1.05) contrast(1.05);
         }
 
-        .softytips-hero-copy {
+        .rl_pricing-hero-copy {
             padding: 1rem 1.2rem 1.1rem;
         }
 
-        .softytips-kicker {
+        .rl_pricing-kicker {
             letter-spacing: 0.08em;
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -129,21 +129,21 @@ def _inject_brand_styles() -> None:
             margin-bottom: 0.3rem;
         }
 
-        .softytips-heading {
+        .rl_pricing-heading {
             font-size: 2rem;
             font-weight: 800;
             margin: 0;
             line-height: 1.1;
         }
 
-        .softytips-sub {
+        .rl_pricing-sub {
             margin-top: 0.35rem;
             margin-bottom: 0;
             font-size: 1rem;
             opacity: 0.95;
         }
 
-        .softytips-loader {
+        .rl_pricing-loader {
             display: flex;
             align-items: center;
             gap: 0.8rem;
@@ -156,11 +156,11 @@ def _inject_brand_styles() -> None:
             font-weight: 600;
         }
 
-        .softytips-loader img {
+        .rl_pricing-loader img {
             width: 28px;
             height: 28px;
             border-radius: 50%;
-            animation: softytips-spin 1.1s linear infinite;
+            animation: rl_pricing-spin 1.1s linear infinite;
         }
 
         .team-fallback {
@@ -178,7 +178,7 @@ def _inject_brand_styles() -> None:
             margin-top: 0.1rem;
         }
 
-        @keyframes softytips-spin {
+        @keyframes rl_pricing-spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
@@ -198,12 +198,12 @@ def _render_brand_header() -> None:
         if hero_uri:
             st.markdown(
                 f"""
-                <div class="softytips-hero">
-                    <img src="{hero_uri}" alt="SoftyTips hero" />
-                    <div class="softytips-hero-copy">
-                        <div class="softytips-kicker">Rugby League Model Hub</div>
-                        <h1 class="softytips-heading">SoftyTips</h1>
-                        <p class="softytips-sub">Upcoming fixtures, fair prices, and market-ready score distributions.</p>
+                <div class="rl_pricing-hero">
+                    <img src="{hero_uri}" alt="rl_pricing hero" />
+                    <div class="rl_pricing-hero-copy">
+                        <div class="rl_pricing-kicker">Rugby League Model Hub</div>
+                        <h1 class="rl_pricing-heading">rl_pricing</h1>
+                        <p class="rl_pricing-sub">Upcoming fixtures, fair prices, and market-ready score distributions.</p>
                     </div>
                 </div>
                 """,
@@ -212,11 +212,11 @@ def _render_brand_header() -> None:
         else:
             st.markdown(
                 """
-                <div class="softytips-hero">
-                    <div class="softytips-hero-copy" style="padding: 1.6rem 1.4rem 1.8rem;">
-                        <div class="softytips-kicker">Rugby League Model Hub</div>
-                        <h1 class="softytips-heading">SoftyTips</h1>
-                        <p class="softytips-sub">Add app/assets/hero_players.jpg to use a custom opening image.</p>
+                <div class="rl_pricing-hero">
+                    <div class="rl_pricing-hero-copy" style="padding: 1.6rem 1.4rem 1.8rem;">
+                        <div class="rl_pricing-kicker">Rugby League Model Hub</div>
+                        <h1 class="rl_pricing-heading">rl_pricing</h1>
+                        <p class="rl_pricing-sub">Add app/assets/hero_players.jpg to use a custom opening image.</p>
                     </div>
                 </div>
                 """,
@@ -231,12 +231,17 @@ def _render_brand_header() -> None:
 
 
 def _render_team_badge(team_name: str, size: int = 54) -> None:
+    initials = "".join(part[0] for part in team_name.split()[:2]).upper()
+
     logo_path = _team_logo_path(team_name)
     if logo_path is not None:
-        st.image(str(logo_path), width=size)
-        return
+        try:
+            st.image(str(logo_path), width=size)
+            return
+        except Exception:
+            # Bad or unsupported image files should not break the app.
+            pass
 
-    initials = "".join(part[0] for part in team_name.split()[:2]).upper()
     st.markdown(
         f"<div class='team-fallback'>{initials}</div>",
         unsafe_allow_html=True,
@@ -250,7 +255,7 @@ def _start_loader(message: str):
     if steeden_uri:
         placeholder.markdown(
             f"""
-            <div class="softytips-loader">
+            <div class="rl_pricing-loader">
                 <img src="{steeden_uri}" alt="Loading" />
                 <span>{message}</span>
             </div>

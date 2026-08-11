@@ -1,4 +1,4 @@
-# SoftyTips Asset Slots
+# RL Pricing Asset Slots
 
 Drop licensed image assets into this folder to enable full branding in the Streamlit app.
 
