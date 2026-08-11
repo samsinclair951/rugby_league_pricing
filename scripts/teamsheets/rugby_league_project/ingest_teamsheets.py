@@ -164,7 +164,7 @@ def prepare_match_records(
             source_match_id,
         )
 
-    return [], []
+        return [], []
 
     player_rows: list[dict[str, Any]] = []
     teamsheet_rows: list[dict[str, Any]] = []
@@ -383,12 +383,19 @@ def ingest_season(
     all_player_rows: list[dict[str, Any]] = []
     all_teamsheet_rows: list[dict[str, Any]] = []
 
+    scraped_match_count = 0
+    skipped_scrape_count = 0
+    unresolved_fixture_count = 0
+
     for match in match_references:
         try:
             scraped_players = scrape_match_teamsheet(
                 summary_url=match.summary_url,
             )
+
         except RuntimeError as exc:
+            skipped_scrape_count += 1
+
             LOGGER.warning(
                 "Season %s: skipping %s vs %s: %s",
                 season,
@@ -396,7 +403,10 @@ def ingest_season(
                 match.away_team,
                 exc,
             )
+
             continue
+
+        scraped_match_count += 1
 
         player_rows, teamsheet_rows = prepare_match_records(
             connection=connection,
@@ -409,8 +419,25 @@ def ingest_season(
             scraped_players=scraped_players,
         )
 
-        all_player_rows.extend(player_rows)
-        all_teamsheet_rows.extend(teamsheet_rows)
+        if not teamsheet_rows:
+            unresolved_fixture_count += 1
+
+            LOGGER.info(
+                "Season %s: could not resolve fixture for %s vs %s",
+                season,
+                match.home_team,
+                match.away_team,
+            )
+
+            continue
+
+        all_player_rows.extend(
+            player_rows
+        )
+
+        all_teamsheet_rows.extend(
+            teamsheet_rows
+        )
 
         LOGGER.info(
             "Season %s: scraped %s vs %s (%s players)",
@@ -438,19 +465,42 @@ def ingest_season(
         teamsheets=teamsheets,
     )
 
-    LOGGER.info(
-        "Season %s: inserted or updated %s player-season-team rows",
-        season,
-        player_count,
+    fixture_count = (
+        teamsheets["fixture_id"].nunique()
+        if not teamsheets.empty
+        else 0
+    )
+
+    total_skipped = (
+        skipped_scrape_count
+        + unresolved_fixture_count
     )
 
     LOGGER.info(
-        "Season %s: inserted or updated %s teamsheet rows",
+        "Season %s summary | "
+        "matches discovered=%s | "
+        "matches scraped=%s | "
+        "fixtures ingested=%s | "
+        "scrape failures=%s | "
+        "unresolved fixtures=%s | "
+        "total skipped=%s | "
+        "player-season-team rows=%s | "
+        "teamsheet rows=%s",
         season,
+        len(match_references),
+        scraped_match_count,
+        fixture_count,
+        skipped_scrape_count,
+        unresolved_fixture_count,
+        total_skipped,
+        player_count,
         teamsheet_count,
     )
 
-    return player_count, teamsheet_count
+    return (
+        player_count,
+        teamsheet_count,
+    )
 
 
 def validate_database(
