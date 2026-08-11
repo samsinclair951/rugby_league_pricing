@@ -67,14 +67,7 @@ def resolve_fixture_id(
     away_team_id: int,
     source_match_id: str,
     match_date_text: str,
-) -> str:
-    """
-    Resolve a scraped teamsheet to an existing fixture.
-
-    Prefer source_match_id when available, but fall back to the fixture date
-    because older fixture ingestion used a different RLP source-match-id format.
-    """
-
+) -> str | None:
     row = connection.execute(
         """
         SELECT fixture_id
@@ -96,14 +89,10 @@ def resolve_fixture_id(
     scraped_date = pd.to_datetime(
         f"{match_date_text} {season}",
         errors="coerce",
-        dayfirst=False,
     )
 
     if pd.isna(scraped_date):
-        raise RuntimeError(
-            "Could not parse teamsheet match date: "
-            f"{match_date_text!r}"
-        )
+        return None
 
     rows = connection.execute(
         """
@@ -125,22 +114,7 @@ def resolve_fixture_id(
     if len(rows) == 1:
         return str(rows[0][0])
 
-    if not rows:
-        raise RuntimeError(
-            "Could not match teamsheet to fixture: "
-            f"season={season}, "
-            f"date={scraped_date.date()}, "
-            f"home_team_id={home_team_id}, "
-            f"away_team_id={away_team_id}"
-        )
-
-    raise RuntimeError(
-        "Multiple fixtures matched teamsheet: "
-        f"season={season}, "
-        f"date={scraped_date.date()}, "
-        f"home_team_id={home_team_id}, "
-        f"away_team_id={away_team_id}"
-    )
+    return None
 
 
 def prepare_match_records(
@@ -181,6 +155,16 @@ def prepare_match_records(
         source_match_id=source_match_id,
         match_date_text=match_date_text,
     )
+
+    if fixture_id is None:
+        LOGGER.info(
+            "Skipping non-fixture match: %s vs %s (%s)",
+            home_team,
+            away_team,
+            source_match_id,
+        )
+
+    return [], []
 
     player_rows: list[dict[str, Any]] = []
     teamsheet_rows: list[dict[str, Any]] = []

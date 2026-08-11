@@ -178,40 +178,6 @@ def get_page(
     )
 
 
-def _league_context_from_heading(
-    row: Tag,
-    season: int,
-) -> bool | None:
-    """
-    Return:
-        True  -> this row starts a Super League round/playoff section.
-        False -> this row starts another competition section.
-        None  -> this is not a competition/round heading.
-    """
-    for anchor in row.find_all(
-        "a",
-        href=True,
-    ):
-        href = str(
-            anchor["href"]
-        )
-
-        if re.search(
-            rf"^/seasons/super-league-{season}/"
-            r"(round-\d+|eliminator|semi-final|grand-final|elim|sf|gf)"
-            r"/summary\.html$",
-            href,
-        ):
-            return True
-
-        if href.startswith(
-            "/competitions/"
-        ):
-            return False
-
-    return None
-
-
 def _extract_fixture_teams(
     row: Tag,
     season: int,
@@ -424,24 +390,11 @@ def scrape_season_match_references(
 
     seen_match_ids: set[str] = set()
 
-    in_league_section = False
     current_month: str | None = None
 
     for row in match_list.find_all(
         "tr"
     ):
-        context = _league_context_from_heading(
-            row=row,
-            season=season,
-        )
-
-        if context is not None:
-            in_league_section = context
-            continue
-
-        if not in_league_section:
-            continue
-
         match_href = _match_href(
             row
         )
