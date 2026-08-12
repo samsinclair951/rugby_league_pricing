@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 - Base & Main Markets Pricers
 - Basic historical matrix pricing
+- some teams logos
+- dashboard edits to view prices
 
 ## [2.1.0] poisson scoring matrix analysis
 

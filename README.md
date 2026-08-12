@@ -1,14 +1,17 @@
 # Rugby League Pricing
 
-A Python project for collecting rugby league data and building a rugby league pricing model.
+A Python project for collecting rugby league data, building team-strength features, and pricing match markets from score probability matrices.
 
-Current focus:
+## Overview
 
-- Super League data ingestion
-- SQLite data storage
-- Feature engineering
-- Team strength modelling
-- Match pricing
+The project now covers the full path from raw data to market prices:
+
+- ingest Super League results and fixtures into SQLite
+- build recent-form and strength-multiplier features
+- generate expected scores and future predictions
+- create historical and Poisson score matrices
+- price match odds, handicaps and totals
+- surface prices in a Streamlit dashboard
 
 ## Requirements
 
@@ -16,21 +19,21 @@ Current focus:
 - uv
 - SQLite
 
-## Setup
+## Quick start
 
 ```bash
 uv sync
 ```
 
-## Initialising the database
+## Initialise the database
 
 ```bash
 uv run python scripts/initialise_database.py
 ```
 
-## Loading historical data
+## Ingest data
 
-Results
+Results:
 
 ```bash
 uv run python scripts/results/rugby_league_project/ingest_results.py \
@@ -38,7 +41,7 @@ uv run python scripts/results/rugby_league_project/ingest_results.py \
   --end-season 2026
 ```
 
-Fixtures
+Fixtures:
 
 ```bash
 uv run python scripts/fixtures/rugby_league_project/ingest_fixtures.py \
@@ -46,50 +49,76 @@ uv run python scripts/fixtures/rugby_league_project/ingest_fixtures.py \
   --end-season 2026
 ```
 
-## Feature pipeline: results → base expected score
+## Rebuild feature tables
 
-```mermaid
-flowchart TD
-    R[("results table<br/>(home_score, away_score)")]
+Recent form:
 
-    subgraph SF["scoring_factors package"]
-        SF1["calculate_historical_scoring_factors()<br/>groups results by match_date,<br/>cumulative sum shifted by 1 day"]
-        SF2["Output per fixture:<br/>league_average_points<br/>home_scoring_factor<br/>away_scoring_factor"]
-        SF1 --> SF2
-    end
-
-    subgraph RF["recent_form package"]
-        RF1["load_results() + stack_results()<br/>one row per team per match"]
-        RF2["add_recent_form()<br/>rolling avg points_for / points_against<br/>over 5 and 10 game windows"]
-        RF3[("recent_form table")]
-        RF1 --> RF2 --> RF3
-    end
-
-    subgraph SM["strength_multipliers package"]
-        SM1["add_league_average()<br/>rolling league avg points (50-game window)"]
-        SM2["add_opponent_recent_form()<br/>attach opponent's rolling form"]
-        SM3["add_raw_multipliers()<br/>shrink small samples to league avg,<br/>raw attack/defence multiplier"]
-        SM4["iterate_strength_multipliers()<br/>loop: adjust performances for opponent<br/>quality, recompute, repeat until stable"]
-        SM5[("strength_multipliers table<br/>attack_multiplier, defence_multiplier<br/>per team per fixture")]
-        RF3 --> SM1 --> SM2 --> SM3 --> SM4 --> SM5
-    end
-
-    subgraph ES["expected_scores package"]
-        ES1["_build_strength_features()<br/>pivot home/away rows into one row per fixture"]
-        ES2["_prepare_scoring_factors()<br/>drop first-date NaNs"]
-        ES3["calculate_expected_scores()<br/>see formula below"]
-        ES4[("expected_scores table<br/>expected_home_score, expected_away_score,<br/>expected_margin, expected_total")]
-        SM5 --> ES1
-        R --> SF1
-        R --> RF1
-        SF2 --> ES2
-        ES1 --> ES3
-        ES2 --> ES3
-        ES3 --> ES4
-    end
+```bash
+uv run python scripts/features/rebuild_recent_form.py
 ```
 
-Expected points formula (in [core.py](src/rugby_league_pricing/features/expected_scores/core.py)):
+Strength multipliers:
+
+```bash
+uv run python scripts/features/rebuild_strength_multipliers.py
+```
+
+Expected scores:
+
+```bash
+uv run python scripts/features/rebuild_expected_scores.py
+```
+
+Future expected-score predictions:
+
+```bash
+uv run python scripts/features/rebuild_predicted_scores.py
+```
+
+## Build the historical score matrix
+
+```bash
+uv run python scripts/pricing/rebuild_historical_matrix.py
+```
+
+The pricing package exposes score-matrix utilities such as:
+
+- `build_historical_scoring_matrix()`
+- `build_poisson_score_matrix()`
+- `build_blended_score_matrix()`
+- `blend_score_matrices()`
+- `poisson_probabilities()`
+
+You can inspect the latest stored matrix with:
+
+```bash
+uv run python scripts/pricing/view_matrix.py
+```
+
+## Pricing flow
+
+The current pricing workflow is:
+
+1. load a fixture and its expected scores
+2. generate a score probability matrix from historical and/or Poisson assumptions
+3. price match odds, handicap and totals markets
+4. display the fixture in the dashboard
+
+The key pricing logic lives under `src/rugby_league_pricing/pricing/` and is consumed by the app layer.
+
+## Dashboard
+
+Launch the app from the repo root:
+
+```bash
+uv run streamlit run app/home.py
+```
+
+For dashboard-specific notes and assumptions, see [README_DASHBOARD.md](README_DASHBOARD.md).
+
+## Expected-score model
+
+The base expected-score logic combines league baseline, team strength, and venue effects:
 
 ```text
 expected_home_points = league_average_points
@@ -103,37 +132,51 @@ expected_away_points = league_average_points
                         × away_scoring_factor
 ```
 
-Each expected score combines three independent signals: the league baseline, opponent-adjusted team strength (from `strength_multipliers`), and the venue scoring factor (from `scoring_factors`).
-
-### Home/away scoring factors are the home-advantage effect
-
-`home_scoring_factor` and `away_scoring_factor` are calculated purely from venue (home vs away), not per-team — every fixture on the same date receives the identical factor regardless of which two teams are playing. They capture the league-wide tendency for home teams to score more than away teams. Team-specific strength (who's actually good or bad at attack/defence) is handled separately by the opponent-adjusted `attack_multiplier`/`defence_multiplier` in the `strength_multipliers` package.
+This is the same pattern described in the feature pipeline and is implemented in the expected-scores package.
 
 ## Project structure
 
 ```text
 .
+├── app/
+│   ├── assets/
+│   └── dashboard/
+├── config/
 ├── data/
+├── notebooks/
 ├── scripts/
+│   ├── features/
+│   ├── fixtures/
+│   ├── pricing/
+│   └── results/
 ├── src/
+│   └── rugby_league_pricing/
+│       ├── database/
+│       ├── features/
+│       ├── pricing/
+│       └── utils/
 ├── tests/
+├── CHANGELOG.md
+├── README.md
+├── README_DASHBOARD.md
 ├── pyproject.toml
-└── README.md
+└── LICENSE
 ```
 
 ## Current functionality
 
-- Scrape historical results
-- Scrape fixtures
-- Maintain canonical team mappings
-- Store data in SQLite
-- Build recent-form & expected scores features
+- scrape and store historical results and fixtures
+- maintain canonical team mappings
+- build recent form and team strength features
+- persist expected scores and predictions to SQLite
+- generate score probability matrices for pricing
+- price match odds, handicap and totals
+- show fixture pricing in a Streamlit dashboard
 
 ## Roadmap
 
-- Match pricing model
-- Days since previous game
-- Weather/Seasonality
-- Player ratings
-- Team news analysis
-- Dashboard
+- improve matrix calibration and blending
+- add days-since-previous-game and seasonality adjustments
+- expand team-news and player-rating features
+- improve dashboard UX and market filters
+- continue validation against historical results
