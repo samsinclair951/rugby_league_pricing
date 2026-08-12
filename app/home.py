@@ -202,7 +202,7 @@ def _render_brand_header() -> None:
                     <img src="{hero_uri}" alt="rl_pricing hero" />
                     <div class="rl_pricing-hero-copy">
                         <div class="rl_pricing-kicker">Rugby League Model Hub</div>
-                        <h1 class="rl_pricing-heading">rl_pricing</h1>
+                        <h1 class="rl_pricing-heading">Rugby Super League Pricing Dash</h1>
                         <p class="rl_pricing-sub">Upcoming fixtures, fair prices, and market-ready score distributions.</p>
                     </div>
                 </div>
@@ -215,7 +215,7 @@ def _render_brand_header() -> None:
                 <div class="rl_pricing-hero">
                     <div class="rl_pricing-hero-copy" style="padding: 1.6rem 1.4rem 1.8rem;">
                         <div class="rl_pricing-kicker">Rugby League Model Hub</div>
-                        <h1 class="rl_pricing-heading">rl_pricing</h1>
+                        <h1 class="rl_pricing-heading">Rugby Super League Pricing Dash</h1>
                         <p class="rl_pricing-sub">Add app/assets/hero_players.jpg to use a custom opening image.</p>
                     </div>
                 </div>
