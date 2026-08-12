@@ -64,26 +64,71 @@ def parse_match_rows(
     season: int,
 ) -> list[dict[str, Any]]:
     """
-    Parse every match row on the Rugby League Project page.
+    Parse Super League match rows from the Rugby League Project season page.
 
-    Completed matches contain integer scores.
+    Rugby League Project mixes other competitions into the season results page,
+    including Challenge Cup and World Club Challenge fixtures.
 
-    Unplayed fixtures contain:
-        home_score = None
-        away_score = None
+    Competition/round heading rows are therefore used to track whether the
+    following match rows belong to Super League.
     """
     matches: list[dict[str, Any]] = []
+
     current_month: str | None = None
+    in_super_league_section = False
+
+    seen_source_match_ids: set[str] = set()
+
+    super_league_prefix = (
+        f"/seasons/super-league-{season}/"
+    )
 
     for row in match_list.find_all("tr"):
-        cells = [cell.get_text(" ", strip=True) for cell in row.find_all("td")]
+        cells = [
+            cell.get_text(
+                " ",
+                strip=True,
+            )
+            for cell in row.find_all("td")
+        ]
 
+        # Heading rows determine which competition the following matches
+        # belong to.
         if len(cells) != 10:
+            links = row.find_all(
+                "a",
+                href=True,
+            )
+
+            for link in links:
+                href = str(
+                    link["href"]
+                )
+
+                if href.startswith(
+                    "/competitions/"
+                ):
+                    in_super_league_section = False
+                    break
+
+                if href.startswith(
+                    super_league_prefix
+                ):
+                    in_super_league_section = True
+                    break
+
+            continue
+
+        # Ignore match rows belonging to Challenge Cup, WCC, etc.
+        if not in_super_league_section:
             continue
 
         date_value = cells[0].strip()
 
-        if any(character.isalpha() for character in date_value):
+        if any(
+            character.isalpha()
+            for character in date_value
+        ):
             date_parts = date_value.split()
 
             if len(date_parts) != 2:
@@ -119,17 +164,75 @@ def parse_match_rows(
             )
             continue
 
-        home_score = parse_int(cells[3])
-        away_score = parse_int(cells[5])
+        home_score = parse_int(
+            cells[3]
+        )
 
-        # A valid row should either have two scores or no scores.
-        if (home_score is None) != (away_score is None):
+        away_score = parse_int(
+            cells[5]
+        )
+
+        if (
+            (home_score is None)
+            != (away_score is None)
+        ):
             LOGGER.warning(
                 "Skipping match with only one score: %s vs %s",
                 cells[2],
                 cells[4],
             )
             continue
+
+        if (
+            season < datetime.now().year
+            and home_score is None
+            and away_score is None
+        ):
+            LOGGER.info(
+                "Skipping unplayed fixture from historical season: %s vs %s",
+                cells[2],
+                cells[4],
+            )
+            continue
+
+        source_match_id: str | None = None
+
+        for link in row.find_all(
+            "a",
+            href=True,
+        ):
+            href = str(
+                link["href"]
+            )
+
+            if href.startswith(
+                "/matches/"
+            ):
+                source_match_id = (
+                    href.rstrip("/")
+                    .split("/")[-1]
+                )
+                break
+
+        # RLP can expose a rearranged fixture more than once on the page.
+        # The numeric match ID is the safest dedupe key.
+        if (
+            source_match_id is not None
+            and source_match_id
+            in seen_source_match_ids
+        ):
+            LOGGER.info(
+                "Skipping duplicate RLP match %s: %s vs %s",
+                source_match_id,
+                cells[2],
+                cells[4],
+            )
+            continue
+
+        if source_match_id is not None:
+            seen_source_match_ids.add(
+                source_match_id
+            )
 
         matches.append(
             {
@@ -142,12 +245,15 @@ def parse_match_rows(
                 "away_score": away_score,
                 "referee": cells[6].strip() or None,
                 "venue": cells[7].strip() or None,
-                "attendance": parse_int(cells[8]),
+                "attendance": parse_int(
+                    cells[8]
+                ),
+                "source_match_id": source_match_id,
             }
         )
 
     LOGGER.info(
-        "Season %s: parsed %s match rows",
+        "Season %s: parsed %s Super League match rows",
         season,
         len(matches),
     )
