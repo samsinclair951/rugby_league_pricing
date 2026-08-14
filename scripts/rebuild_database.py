@@ -11,10 +11,17 @@ PROJECT_ROOT = next(
     if (parent / "pyproject.toml").exists()
 )
 
-DEFAULT_DATABASE_PATH = PROJECT_ROOT / "data" / "rugby_league_pricing.db"
+DEFAULT_DATABASE_PATH = (
+    PROJECT_ROOT
+    / "data"
+    / "rugby_league_pricing.db"
+)
 
 
-def run_module(module: str, *arguments: str) -> None:
+def run_module(
+    module: str,
+    *arguments: str,
+) -> None:
     """Run a Python module and stop immediately if it fails."""
     command = [
         sys.executable,
@@ -23,7 +30,9 @@ def run_module(module: str, *arguments: str) -> None:
         *arguments,
     ]
 
-    print(f"\nRunning: {' '.join(command)}")
+    print(
+        f"\nRunning: {' '.join(command)}"
+    )
 
     subprocess.run(
         command,
@@ -34,29 +43,71 @@ def run_module(module: str, *arguments: str) -> None:
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Rebuild the rugby league pricing database."
+        description=(
+            "Rebuild the rugby league pricing database."
+        )
     )
 
     parser.add_argument(
         "--start-season",
         type=int,
         required=True,
-        help="First season to ingest, for example 2025.",
+        help=(
+            "First season to ingest, "
+            "for example 2025."
+        ),
     )
 
     parser.add_argument(
         "--end-season",
         type=int,
         required=True,
-        help="Final season to ingest, for example 2026.",
+        help=(
+            "Final season to ingest, "
+            "for example 2026."
+        ),
     )
 
     parser.add_argument(
         "--reset",
         action="store_true",
-        help="Delete the existing database before rebuilding it.",
+        help=(
+            "Delete the existing database "
+            "before rebuilding it."
+        ),
     )
 
+    parser.add_argument(
+        "--include-teamsheets",
+        action="store_true",
+        help=(
+            "Run the slow Rugby League Project "
+            "teamsheet/player ingestion as part "
+            "of the rebuild."
+        ),
+    )
+
+    parser.add_argument(
+            "--load-teamsheets-from-parquet",
+            action="store_true",
+            help=(
+                "Load teamsheet/player data from Parquet files instead of "
+                "ingesting from the Rugby League Project."
+            ),
+        )
+    parser.add_argument(
+        "--skip-teamsheets-from-parquet",
+        action="store_false",
+        dest="load_teamsheets_from_parquet",
+        help=(
+            "Do not load players and teamsheets "
+            "from parquet during the rebuild."
+        ),
+    )
+
+    parser.set_defaults(
+        load_teamsheets_from_parquet=True,
+    )
     return parser.parse_args()
 
 
@@ -64,24 +115,41 @@ def main() -> None:
     args = parse_arguments()
 
     if args.start_season > args.end_season:
-        raise ValueError("--start-season cannot be later than --end-season")
+        raise ValueError(
+            "--start-season cannot be later "
+            "than --end-season"
+        )
 
-    database_path = DEFAULT_DATABASE_PATH.resolve()
+    database_path = (
+        DEFAULT_DATABASE_PATH.resolve()
+    )
 
-    if args.reset and database_path.exists():
+    if (
+        args.reset
+        and database_path.exists()
+    ):
         database_path.unlink()
-        print(f"Deleted existing database: {database_path}")
+
+        print(
+            "Deleted existing database: "
+            f"{database_path}"
+        )
 
     if database_path.exists():
         raise FileExistsError(
-            f"Database already exists: {database_path}\n"
-            "Use --reset to delete and recreate it."
+            f"Database already exists: "
+            f"{database_path}\n"
+            "Use --reset to delete and "
+            "recreate it."
         )
 
-    run_module("scripts.initialise_database")
+    run_module(
+        "scripts.initialise_database"
+    )
 
     run_module(
-        "scripts.fixtures.rugby_league_project.ingest_fixtures",
+        "scripts.fixtures.rugby_league_project."
+        "ingest_fixtures",
         "--start-season",
         str(args.start_season),
         "--end-season",
@@ -89,28 +157,57 @@ def main() -> None:
     )
 
     run_module(
-        "scripts.results.rugby_league_project.ingest_results",
+        "scripts.results.rugby_league_project."
+        "ingest_results",
         "--start-season",
         str(args.start_season),
         "--end-season",
         str(args.end_season),
     )
 
-    run_module(
-            "scripts.teamsheets.rugby_league_project.ingest_teamsheets",
+    if args.load_teamsheets_from_parquet:
+        run_module(
+            "scripts.teamsheets.load_from_parquet"
+        )
+
+    if args.include_teamsheets:
+        run_module(
+            "scripts.teamsheets.rugby_league_project."
+            "ingest_teamsheets",
             "--start-season",
             str(args.start_season),
             "--end-season",
             str(args.end_season),
         )
+    
+    run_module(
+        "scripts.features.rebuild_recent_form"
+    )
 
-    run_module("scripts.features.rebuild_recent_form")
-    run_module("scripts.features.rebuild_strength_multipliers")
-    run_module("scripts.features.rebuild_expected_scores")
-    run_module("scripts.features.rebuild_predicted_scores")
-    run_module("scripts.pricing.rebuild_historical_matrix")
+    run_module(
+        "scripts.features."
+        "rebuild_strength_multipliers"
+    )
 
-    print(f"\nDatabase rebuild complete: {database_path}")
+    run_module(
+        "scripts.features."
+        "rebuild_expected_scores"
+    )
+
+    run_module(
+        "scripts.features."
+        "rebuild_predicted_scores"
+    )
+
+    run_module(
+        "scripts.pricing."
+        "rebuild_historical_matrix"
+    )
+
+    print(
+        f"\nDatabase rebuild complete: "
+        f"{database_path}"
+    )
 
 
 if __name__ == "__main__":

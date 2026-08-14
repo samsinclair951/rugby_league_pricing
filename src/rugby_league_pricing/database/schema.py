@@ -8,11 +8,64 @@ def initialise_database() -> None:
             """
             PRAGMA foreign_keys = ON;
 
+            CREATE TABLE IF NOT EXISTS tournaments (
+                tournament_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tournament_name TEXT NOT NULL,
+                country TEXT NOT NULL,
+                competition_type TEXT,
+                active INTEGER NOT NULL DEFAULT 1
+                    CHECK (active IN (0, 1)),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                UNIQUE (
+                    tournament_name,
+                    country
+                )
+            );
+
+            CREATE TABLE IF NOT EXISTS tournament_source_mappings (
+                tournament_source_mapping_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tournament_id INTEGER NOT NULL,
+                source_name TEXT NOT NULL,
+                source_tournament_name TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (tournament_id)
+                    REFERENCES tournaments(tournament_id),
+
+                UNIQUE (
+                    source_name,
+                    source_tournament_name
+                )
+            );
+
+            CREATE TABLE IF NOT EXISTS competition_stages (
+                competition_stage_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tournament_id INTEGER NOT NULL,
+                stage_name TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (tournament_id)
+                    REFERENCES tournaments(tournament_id),
+
+                UNIQUE (
+                    tournament_id,
+                    stage_name
+                )
+            );
+
             CREATE TABLE IF NOT EXISTS teams (
                 team_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 canonical_name TEXT NOT NULL UNIQUE,
+                current_tournament_id INTEGER,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (current_tournament_id)
+                    REFERENCES tournaments(tournament_id)
             );
 
             CREATE TABLE IF NOT EXISTS team_source_mappings (
@@ -38,6 +91,8 @@ def initialise_database() -> None:
             CREATE TABLE IF NOT EXISTS fixtures (
                 fixture_id TEXT PRIMARY KEY,
                 season INTEGER NOT NULL,
+                tournament_id INTEGER NOT NULL,
+                competition_stage_id INTEGER,
                 match_date TEXT NOT NULL,
                 kick_off TEXT,
                 home_team_id INTEGER NOT NULL,
@@ -48,6 +103,12 @@ def initialise_database() -> None:
                 source_match_id TEXT,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (tournament_id)
+                    REFERENCES tournaments(tournament_id),
+
+                FOREIGN KEY (competition_stage_id)
+                    REFERENCES competition_stages(competition_stage_id),
 
                 FOREIGN KEY (home_team_id)
                     REFERENCES teams(team_id),
@@ -90,7 +151,8 @@ def initialise_database() -> None:
                 season INTEGER NOT NULL,
                 team_id INTEGER NOT NULL,
                 primary_position TEXT,
-                active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+                active INTEGER NOT NULL DEFAULT 1
+                    CHECK (active IN (0, 1)),
                 source_name TEXT NOT NULL,
                 source_player_id TEXT,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -106,22 +168,18 @@ def initialise_database() -> None:
                     REFERENCES teams(team_id)
             );
 
-            CREATE INDEX IF NOT EXISTS idx_players_season_team
-                ON players(season, team_id);
-
-            CREATE INDEX IF NOT EXISTS idx_players_source_player
-                ON players(source_name, source_player_id);
-
-
             CREATE TABLE IF NOT EXISTS teamsheets (
                 fixture_id TEXT NOT NULL,
                 season INTEGER NOT NULL,
                 team_id INTEGER NOT NULL,
                 player_id TEXT NOT NULL,
-                side TEXT NOT NULL CHECK (side IN ('home', 'away')),
+                side TEXT NOT NULL
+                    CHECK (side IN ('home', 'away')),
                 position TEXT,
-                lineup_order INTEGER NOT NULL CHECK (lineup_order BETWEEN 1 AND 17),
-                is_starting INTEGER NOT NULL CHECK (is_starting IN (0, 1)),
+                lineup_order INTEGER NOT NULL
+                    CHECK (lineup_order BETWEEN 1 AND 17),
+                is_starting INTEGER NOT NULL
+                    CHECK (is_starting IN (0, 1)),
                 source_name TEXT NOT NULL,
                 source_match_id TEXT,
                 source_url TEXT,
@@ -151,15 +209,6 @@ def initialise_database() -> None:
                         team_id
                     )
             );
-
-            CREATE INDEX IF NOT EXISTS idx_teamsheets_fixture
-                ON teamsheets(fixture_id);
-
-            CREATE INDEX IF NOT EXISTS idx_teamsheets_player
-                ON teamsheets(player_id, season);
-
-            CREATE INDEX IF NOT EXISTS idx_teamsheets_team_season
-                ON teamsheets(team_id, season);
 
             CREATE TABLE IF NOT EXISTS recent_form (
                 recent_form_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -312,8 +361,26 @@ def initialise_database() -> None:
                 )
             );
 
+            CREATE INDEX IF NOT EXISTS idx_tournaments_country
+                ON tournaments(country);
+
+            CREATE INDEX IF NOT EXISTS idx_tournament_source_mappings_lookup
+                ON tournament_source_mappings(
+                    source_name,
+                    source_tournament_name
+                );
+
+            CREATE INDEX IF NOT EXISTS idx_competition_stages_tournament
+                ON competition_stages(
+                    tournament_id,
+                    stage_name
+                );
+
+            CREATE INDEX IF NOT EXISTS idx_teams_current_tournament
+                ON teams(current_tournament_id);
+
             CREATE INDEX IF NOT EXISTS idx_team_source_mappings_lookup
-                ON team_source_mappings (
+                ON team_source_mappings(
                     source_name,
                     source_team_name,
                     valid_from_season,
@@ -322,6 +389,15 @@ def initialise_database() -> None:
 
             CREATE INDEX IF NOT EXISTS idx_fixtures_match_date
                 ON fixtures(match_date);
+
+            CREATE INDEX IF NOT EXISTS idx_fixtures_tournament_season
+                ON fixtures(
+                    tournament_id,
+                    season
+                );
+
+            CREATE INDEX IF NOT EXISTS idx_fixtures_stage
+                ON fixtures(competition_stage_id);
 
             CREATE INDEX IF NOT EXISTS idx_results_match_date
                 ON results(match_date);
@@ -332,8 +408,35 @@ def initialise_database() -> None:
             CREATE INDEX IF NOT EXISTS idx_results_away_team
                 ON results(away_team_id);
 
+            CREATE INDEX IF NOT EXISTS idx_players_season_team
+                ON players(
+                    season,
+                    team_id
+                );
+
+            CREATE INDEX IF NOT EXISTS idx_players_source_player
+                ON players(
+                    source_name,
+                    source_player_id
+                );
+
+            CREATE INDEX IF NOT EXISTS idx_teamsheets_fixture
+                ON teamsheets(fixture_id);
+
+            CREATE INDEX IF NOT EXISTS idx_teamsheets_player
+                ON teamsheets(
+                    player_id,
+                    season
+                );
+
+            CREATE INDEX IF NOT EXISTS idx_teamsheets_team_season
+                ON teamsheets(
+                    team_id,
+                    season
+                );
+
             CREATE INDEX IF NOT EXISTS idx_recent_form_team_date
-                ON recent_form (
+                ON recent_form(
                     team_id,
                     match_date
                 );
@@ -342,7 +445,7 @@ def initialise_database() -> None:
                 ON recent_form(match_date);
 
             CREATE INDEX IF NOT EXISTS idx_strength_multipliers_team_date
-                ON strength_multipliers (
+                ON strength_multipliers(
                     team_id,
                     match_date
                 );
