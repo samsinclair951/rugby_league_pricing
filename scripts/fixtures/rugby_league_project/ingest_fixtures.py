@@ -24,7 +24,6 @@ from rugby_league_project.scraper import scrape_season_matches
 from rugby_league_project.teams_mapping import (
     SOURCE_NAME,
     apply_team_ids,
-    filter_super_league_matches,
 )
 
 from rugby_league_pricing.database.connection import (
@@ -38,14 +37,14 @@ LOGGER = logging.getLogger(__name__)
 TOURNAMENT_NAME = "Super League"
 TOURNAMENT_COUNTRY = "England"
 TOURNAMENT_TYPE = "league"
-SOURCE_TOURNAMENT_NAME = "Super League"
 
 
 def get_or_create_tournament(
     connection: sqlite3.Connection,
+    tournament_name: str,
 ) -> int:
     """
-    Return the canonical Super League tournament ID.
+    Return the canonical tournament ID.
 
     Creates the tournament if it does not already exist.
     """
@@ -57,7 +56,7 @@ def get_or_create_tournament(
           AND country = ?
         """,
         (
-            TOURNAMENT_NAME,
+            tournament_name,
             TOURNAMENT_COUNTRY,
         ),
     ).fetchone()
@@ -92,17 +91,19 @@ def get_or_create_tournament(
         VALUES (?, ?, ?, 1)
         """,
         (
-            TOURNAMENT_NAME,
+            tournament_name,
             TOURNAMENT_COUNTRY,
             TOURNAMENT_TYPE,
         ),
     )
 
-    tournament_id = int(cursor.lastrowid)
+    tournament_id = int(
+        cursor.lastrowid
+    )
 
     LOGGER.info(
         "Created tournament: %s (%s) -> tournament_id %s",
-        TOURNAMENT_NAME,
+        tournament_name,
         TOURNAMENT_COUNTRY,
         tournament_id,
     )
@@ -113,8 +114,9 @@ def get_or_create_tournament(
 def upsert_tournament_source_mapping(
     connection: sqlite3.Connection,
     tournament_id: int,
+    source_tournament_name: str,
 ) -> None:
-    """Ensure the Rugby League Project tournament mapping exists."""
+    """Ensure the source tournament mapping exists."""
     connection.execute(
         """
         INSERT INTO tournament_source_mappings (
@@ -135,7 +137,7 @@ def upsert_tournament_source_mapping(
         (
             tournament_id,
             SOURCE_NAME,
-            SOURCE_TOURNAMENT_NAME,
+            source_tournament_name,
         ),
     )
 
@@ -194,8 +196,9 @@ def get_or_create_competition_stage(
     )
 
     LOGGER.info(
-        "Created competition stage: %s / %s -> competition_stage_id %s",
-        TOURNAMENT_NAME,
+        "Created competition stage: tournament_id=%s / %s "
+        "-> competition_stage_id %s",
+        tournament_id,
         cleaned_stage_name,
         competition_stage_id,
     )
@@ -389,39 +392,52 @@ def ingest_season(
 
     Both completed matches and future scheduled matches are included.
     """
+    matches = scrape_season_matches(
+        season=season,
+    )
+
+    LOGGER.info(
+        "Season %s: scraped %s tournament fixtures",
+        season,
+        len(matches),
+    )
+
+    if not matches:
+        LOGGER.warning(
+            "Season %s: no fixtures found",
+            season,
+        )
+        return 0
+
+    tournament_names = {
+        str(match["tournament_name"])
+        for match in matches
+    }
+
+    if len(tournament_names) != 1:
+        raise RuntimeError(
+            "Expected one tournament per season scrape, "
+            f"found: {sorted(tournament_names)}"
+        )
+
+    tournament_name = next(
+        iter(tournament_names)
+    )
+
     tournament_id = get_or_create_tournament(
         connection=connection,
+        tournament_name=tournament_name,
     )
 
     upsert_tournament_source_mapping(
         connection=connection,
         tournament_id=tournament_id,
-    )
-
-    all_matches = scrape_season_matches(
-        season=season,
-    )
-
-    LOGGER.info(
-        "Season %s: scraped %s total matches",
-        season,
-        len(all_matches),
-    )
-
-    league_matches = filter_super_league_matches(
-        matches=all_matches,
-        season=season,
-    )
-
-    LOGGER.info(
-        "Season %s: found %s league fixtures",
-        season,
-        len(league_matches),
+        source_tournament_name=tournament_name,
     )
 
     mapped_matches = apply_team_ids(
         connection=connection,
-        matches=league_matches,
+        matches=matches,
         create_missing=True,
     )
 

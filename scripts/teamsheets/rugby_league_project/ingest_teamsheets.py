@@ -26,13 +26,11 @@ from scripts.rugby_league_project.teams_mapping import (
     SOURCE_NAME,
     apply_team_ids,
 )
-
-from src.rugby_league_pricing.database.connection import get_connection
 from scripts.teamsheets.rugby_league_project.scraper import (
     scrape_match_teamsheet,
     scrape_season_match_references,
 )
-from src.rugby_league_pricing.utils.fixtures import build_fixture_id
+from src.rugby_league_pricing.database.connection import get_connection
 from src.rugby_league_pricing.utils.sql import upsert_dataframe
 
 LOGGER = logging.getLogger(__name__)
@@ -360,6 +358,62 @@ def upsert_teamsheets(
     )
 
 
+def get_existing_source_match_ids(
+    connection: sqlite3.Connection,
+    season: int,
+) -> set[str]:
+    """
+    Return Rugby League Project match IDs that already have
+    teamsheet rows stored for this season.
+    """
+    rows = connection.execute(
+        """
+        SELECT DISTINCT source_match_id
+        FROM teamsheets
+        WHERE season = ?
+          AND source_name = ?
+          AND source_match_id IS NOT NULL
+        """,
+        (
+            season,
+            SOURCE_NAME,
+        ),
+    ).fetchall()
+
+    return {
+        str(row[0])
+        for row in rows
+    }
+
+
+def get_valid_fixture_source_match_ids(
+    connection: sqlite3.Connection,
+    season: int,
+) -> set[str]:
+    """
+    Return Rugby League Project match IDs belonging to fixtures
+    currently stored for this season.
+    """
+    rows = connection.execute(
+        """
+        SELECT source_match_id
+        FROM fixtures
+        WHERE season = ?
+          AND source_name = ?
+          AND source_match_id IS NOT NULL
+        """,
+        (
+            season,
+            SOURCE_NAME,
+        ),
+    ).fetchall()
+
+    return {
+        str(row[0])
+        for row in rows
+    }
+
+
 def ingest_season(
     connection: sqlite3.Connection,
     season: int,
@@ -373,6 +427,39 @@ def ingest_season(
     match_references = scrape_season_match_references(
         season=season,
     )
+
+    valid_fixture_source_match_ids = (
+        get_valid_fixture_source_match_ids(
+            connection=connection,
+            season=season,
+        )
+    )
+
+    discovered_count = len(
+        match_references
+    )
+
+    match_references = [
+        match
+        for match in match_references
+        if match.source_match_id
+        in valid_fixture_source_match_ids
+    ]
+
+    LOGGER.info(
+        "Season %s: retained %s fixture match pages "
+        "from %s discovered pages",
+        season,
+        len(match_references),
+        discovered_count,
+    )
+
+    existing_source_match_ids = get_existing_source_match_ids(
+        connection=connection,
+        season=season,
+    )
+
+    already_ingested_count = 0
 
     LOGGER.info(
         "Season %s: found %s match detail pages",
@@ -388,6 +475,18 @@ def ingest_season(
     unresolved_fixture_count = 0
 
     for match in match_references:
+        if match.source_match_id in existing_source_match_ids:
+            already_ingested_count += 1
+
+            LOGGER.info(
+                "Season %s: already have teamsheet for %s vs %s (%s); skipping",
+                season,
+                match.home_team,
+                match.away_team,
+                match.source_match_id,
+            )
+
+            continue
         try:
             scraped_players = scrape_match_teamsheet(
                 summary_url=match.summary_url,
@@ -472,13 +571,16 @@ def ingest_season(
     )
 
     total_skipped = (
-        skipped_scrape_count
+        already_ingested_count
+        + skipped_scrape_count
         + unresolved_fixture_count
     )
 
     LOGGER.info(
         "Season %s summary | "
         "matches discovered=%s | "
+        "fixture matches=%s | "
+        "already ingested=%s | "
         "matches scraped=%s | "
         "fixtures ingested=%s | "
         "scrape failures=%s | "
@@ -487,7 +589,9 @@ def ingest_season(
         "player-season-team rows=%s | "
         "teamsheet rows=%s",
         season,
+        discovered_count,
         len(match_references),
+        already_ingested_count,
         scraped_match_count,
         fixture_count,
         skipped_scrape_count,
@@ -571,25 +675,36 @@ def main() -> None:
         validate_database(
             connection=connection,
         )
-
-        try:
-            for season in range(
-                args.start_season,
-                args.end_season + 1,
-            ):
+        for season in range(
+            args.start_season,
+            args.end_season + 1,
+        ):
+            try:
                 player_count, teamsheet_count = ingest_season(
                     connection=connection,
                     season=season,
                 )
 
+                connection.commit()
+
                 total_players += player_count
                 total_teamsheet_rows += teamsheet_count
 
-            connection.commit()
+                LOGGER.info(
+                    "Season %s committed successfully.",
+                    season,
+                )
 
-        except Exception:
-            connection.rollback()
-            raise
+            except Exception:
+                connection.rollback()
+
+                LOGGER.exception(
+                    "Season %s failed. "
+                    "Rolled back this season only.",
+                    season,
+                )
+
+                raise
 
     LOGGER.info(
         "Finished. Inserted or updated %s player-season-team rows and "

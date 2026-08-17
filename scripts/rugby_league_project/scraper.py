@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import requests
@@ -11,6 +11,8 @@ from bs4.element import Tag
 LOGGER = logging.getLogger(__name__)
 
 BASE_URL = "https://www.rugbyleagueproject.org/seasons"
+
+TOURNAMENT_NAME = "Super League"
 
 
 def season_url(season: int) -> str:
@@ -59,6 +61,68 @@ def parse_int(value: str) -> int | None:
         return None
 
 
+def normalise_competition_stage(
+    heading_text: str,
+) -> str | None:
+    """
+    Convert Rugby League Project section headings into canonical
+    Super League competition stages.
+
+    Return None for sections that should not be ingested as Super League.
+    """
+    value = " ".join(
+        heading_text.lower().split()
+    )
+
+    if "challenge cup" in value:
+        return None
+
+    if "world club challenge" in value:
+        return None
+
+    if "world club series" in value:
+        return None
+
+    if "qualifier" in value and "qualif playoff" not in value:
+        return None
+
+    if "million pound game" in value:
+        return None
+
+    if "kiwis tour" in value:
+        return None
+
+    if value.startswith("s8 round"):
+        return "super_8s"
+
+    if "grand final" in value:
+        return "grand_final"
+
+    if value == "quarter final":
+        return "quarter_final"
+
+    if value in {
+        "semi final",
+        "prelim semi",
+        "qualif semi",
+    }:
+        return "semi_final"
+
+    if value == "prelim final":
+        return "preliminary_final"
+
+    if value == "elim":
+        return "elimination_final"
+
+    if value == "qualif playoff":
+        return "playoff"
+
+    if value.startswith("round "):
+        return "regular_season"
+
+    return None
+
+
 def parse_match_rows(
     match_list: Tag,
     season: int,
@@ -75,7 +139,7 @@ def parse_match_rows(
     matches: list[dict[str, Any]] = []
 
     current_month: str | None = None
-    in_super_league_section = False
+    current_stage: str | None = None
 
     seen_source_match_ids: set[str] = set()
 
@@ -95,32 +159,54 @@ def parse_match_rows(
         # Heading rows determine which competition the following matches
         # belong to.
         if len(cells) != 10:
+            heading_text = " ".join(
+                row.get_text(
+                    " ",
+                    strip=True,
+                ).split()
+            )
+    
             links = row.find_all(
                 "a",
                 href=True,
             )
-
-            for link in links:
-                href = str(
-                    link["href"]
-                )
-
-                if href.startswith(
-                    "/competitions/"
-                ):
-                    in_super_league_section = False
-                    break
-
-                if href.startswith(
+    
+            is_super_league_heading = any(
+                str(link["href"]).startswith(
                     super_league_prefix
-                ):
-                    in_super_league_section = True
-                    break
+                )
+                for link in links
+            )
+    
+            is_other_competition = any(
+                str(link["href"]).startswith(
+                    "/competitions/"
+                )
+                for link in links
+            )
+    
+            if is_other_competition:
+                current_stage = None
+                continue
+
+            normalised_stage = normalise_competition_stage(
+                heading_text
+            )
+
+            if is_super_league_heading:
+                current_stage = normalised_stage
+                continue
+
+            # Some genuine Super League postseason headings on RLP have no links,
+            # for example S8 Round 1, Semi Final, Grand Final, Elim, etc.
+            if normalised_stage is not None:
+                current_stage = normalised_stage
+                continue
 
             continue
 
         # Ignore match rows belonging to Challenge Cup, WCC, etc.
-        if not in_super_league_section:
+        if current_stage is None:
             continue
 
         date_value = cells[0].strip()
@@ -184,7 +270,7 @@ def parse_match_rows(
             continue
 
         if (
-            season < datetime.now().year
+            season < datetime.now(UTC).year
             and home_score is None
             and away_score is None
         ):
@@ -237,6 +323,8 @@ def parse_match_rows(
         matches.append(
             {
                 "season": season,
+                "tournament_name": TOURNAMENT_NAME,
+                "competition_stage_name": current_stage,
                 "match_date": match_date.isoformat(),
                 "kick_off": cells[1].strip() or None,
                 "home_team_name": cells[2].strip(),
@@ -273,3 +361,41 @@ def scrape_season_matches(
         match_list=match_list,
         season=season,
     )
+
+
+def inspect_section_headings(
+    match_list: Tag,
+) -> None:
+    for row in match_list.find_all("tr"):
+        cells = row.find_all("td")
+
+        if len(cells) == 10:
+            continue
+
+        text = " ".join(
+            row.get_text(
+                " ",
+                strip=True,
+            ).split()
+        )
+
+        if not text:
+            continue
+
+        links = [
+            str(link["href"])
+            for link in row.find_all(
+                "a",
+                href=True,
+            )
+        ]
+
+        print(
+            {
+                "text": text,
+                "links": links,
+                "normalised_stage": normalise_competition_stage(
+                    text
+                ),
+            }
+        )

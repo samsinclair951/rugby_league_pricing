@@ -28,8 +28,12 @@ def test_upsert_strength_multipliers_round_trip() -> None:
                 season INTEGER NOT NULL,
 
                 league_average_points REAL,
+                raw_attack_multiplier REAL,
+                raw_defence_multiplier REAL,
                 attack_multiplier REAL,
                 defence_multiplier REAL,
+                scaled_attack_multiplier REAL,
+                scaled_defence_multiplier REAL,
 
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -54,8 +58,12 @@ def test_upsert_strength_multipliers_round_trip() -> None:
                 ],
                 "season": [2026, 2026],
                 "league_average_points": [24.0, 24.0],
+                "raw_attack_multiplier": [1.12, 0.88],
+                "raw_defence_multiplier": [0.94, 1.06],
                 "attack_multiplier": [1.10, 0.90],
                 "defence_multiplier": [0.95, 1.05],
+                "scaled_attack_multiplier": [1.08, 0.92],
+                "scaled_defence_multiplier": [0.96, 1.04],
             }
         )
 

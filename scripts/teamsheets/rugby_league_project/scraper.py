@@ -124,6 +124,62 @@ def _team_slug_from_href(
     return slug
 
 
+def normalise_competition_stage(
+    heading_text: str,
+) -> str | None:
+    value = " ".join(
+        heading_text.lower().split()
+    )
+
+    if "challenge cup" in value:
+        return None
+
+    if "world club challenge" in value:
+        return None
+
+    if "world club series" in value:
+        return None
+
+    if "qualifier" in value and "qualif playoff" not in value:
+        return None
+
+    if "million pound game" in value:
+        return None
+
+    if "kiwis tour" in value:
+        return None
+
+    if value.startswith("s8 round"):
+        return "super_8s"
+
+    if "grand final" in value:
+        return "grand_final"
+
+    if value == "quarter final":
+        return "quarter_final"
+
+    if value in {
+        "semi final",
+        "prelim semi",
+        "qualif semi",
+    }:
+        return "semi_final"
+
+    if value == "prelim final":
+        return "preliminary_final"
+
+    if value == "elim":
+        return "elimination_final"
+
+    if value == "qualif playoff":
+        return "playoff"
+
+    if value.startswith("round "):
+        return "regular_season"
+
+    return None
+
+
 def get_page(
     url: str,
     timeout: int = 30,
@@ -347,6 +403,12 @@ def scrape_season_match_references(
         f"super-league-{season}/results.html"
     )
 
+    current_stage: str | None = None
+
+    super_league_prefix = (
+        f"/seasons/super-league-{season}/"
+    )
+
     try:
         response = get_page(
             url=season_url,
@@ -395,6 +457,62 @@ def scrape_season_match_references(
     for row in match_list.find_all(
         "tr"
     ):
+        cells = row.find_all(
+            "td"
+        )
+
+        # Competition/stage heading row
+        if len(cells) != 10:
+            heading_text = " ".join(
+                row.get_text(
+                    " ",
+                    strip=True,
+                ).split()
+            )
+
+            links = row.find_all(
+                "a",
+                href=True,
+            )
+
+            is_super_league_heading = any(
+                str(link["href"]).startswith(
+                    super_league_prefix
+                )
+                for link in links
+            )
+
+            is_other_competition = any(
+                str(link["href"]).startswith(
+                    "/competitions/"
+                )
+                for link in links
+            )
+
+            if is_other_competition:
+                current_stage = None
+                continue
+
+            normalised_stage = (
+                normalise_competition_stage(
+                    heading_text
+                )
+            )
+
+            if is_super_league_heading:
+                current_stage = normalised_stage
+                continue
+
+            if normalised_stage is not None:
+                current_stage = normalised_stage
+                continue
+
+            continue
+
+        # Ignore rows outside the Super League competition
+        if current_stage is None:
+            continue
+
         match_href = _match_href(
             row
         )
