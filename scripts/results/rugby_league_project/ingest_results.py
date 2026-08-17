@@ -25,7 +25,6 @@ from rugby_league_project.scraper import scrape_season_matches
 from rugby_league_project.teams_mapping import (
     SOURCE_NAME,
     apply_team_ids,
-    filter_super_league_matches,
 )
 
 from rugby_league_pricing.database.connection import (
@@ -136,13 +135,8 @@ def ingest_season(
         len(all_matches),
     )
 
-    league_matches = filter_super_league_matches(
-        matches=all_matches,
-        season=season,
-    )
-
     completed_matches = filter_completed_results(
-        matches=league_matches,
+        matches=all_matches,
     )
 
     LOGGER.info(

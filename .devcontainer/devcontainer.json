@@ -18,8 +18,10 @@
       "charliermarsh.ruff",
       "ms-azuretools.vscode-docker",
       "GitHub.copilot",
-      "GitHub.copilot-chat"
+      "GitHub.copilot-chat",
+      "qwtel.sqlite-viewer"
     ]
   }
 }
+
 }

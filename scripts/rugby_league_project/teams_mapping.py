@@ -271,42 +271,6 @@ KNOWN_CANONICAL_ALIASES: dict[str, str] = {
 }
 
 
-def filter_super_league_matches(
-    matches: list[dict[str, Any]],
-    season: int,
-) -> list[dict[str, Any]]:
-    valid_teams = SUPER_LEAGUE_TEAMS.get(season)
-
-    if valid_teams is None:
-        raise ValueError(f"No Super League team list configured for {season}")
-
-    retained: list[dict[str, Any]] = []
-
-    for match in matches:
-        home_team = match["home_team_name"]
-        away_team = match["away_team_name"]
-
-        if home_team in valid_teams and away_team in valid_teams:
-            retained.append(match)
-        else:
-            LOGGER.debug(
-                "Removing non-Super-League match: %s vs %s",
-                home_team,
-                away_team,
-            )
-
-    removed_count = len(matches) - len(retained)
-
-    LOGGER.info(
-        "Season %s: retained %s league matches and removed %s other matches",
-        season,
-        len(retained),
-        removed_count,
-    )
-
-    return retained
-
-
 def resolve_team_id(
     connection: sqlite3.Connection,
     source_team_name: str,
@@ -523,7 +487,6 @@ def apply_team_ids(
                 "home_team_id": home_team_id,
                 "away_team_id": away_team_id,
                 "source_name": SOURCE_NAME,
-                "source_match_id": None,
             }
         )
 
