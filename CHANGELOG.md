@@ -2,10 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.2.0] negative binomial & bivariate poisson analyses
+## [3.1.0] negative binomial & bivariate poisson analyses
 
 - notebook analysing similar use of negative binomial & bivariate poisson matrices.
 - blending with tilted historical emperical matrix to find the best blend.
+
+## [3.0.0] Players DB & Teamsheets
+
+- scrapes teamsheets and creates a teamsheets table in db
+- create a base players db
+
+## [2.1.1] git attributes
+
+- normalize line endings with git attributes
 
 ## [2.1.0] poisson scoring matrix analysis
 

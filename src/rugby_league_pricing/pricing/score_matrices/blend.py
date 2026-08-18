@@ -9,27 +9,30 @@ from ..score_matrices_legacy import build_shifted_historical_score_matrix
 
 
 def blend_score_matrices(
-    poisson_matrix: ScoreMatrix,
+    theoretical_matrix: ScoreMatrix,
     historical_matrix: ScoreMatrix,
     *,
     historical_weight: float,
 ) -> ScoreMatrix:
-    """Blend Poisson and shifted historical score matrices."""
     if not 0 <= historical_weight <= 1:
         raise ValueError("historical_weight must be between 0 and 1.")
 
-    if not np.array_equal(poisson_matrix.scores, historical_matrix.scores):
+    if not np.array_equal(
+        theoretical_matrix.scores,
+        historical_matrix.scores,
+    ):
         raise ValueError("Both matrices must use the same score grid.")
 
     probabilities = (
-        (1 - historical_weight) * poisson_matrix.probabilities
+        (1 - historical_weight) * theoretical_matrix.probabilities
         + historical_weight * historical_matrix.probabilities
     )
+
     probabilities /= probabilities.sum()
 
     return ScoreMatrix(
         probabilities=probabilities,
-        scores=poisson_matrix.scores.copy(),
+        scores=theoretical_matrix.scores.copy(),
     )
 
 

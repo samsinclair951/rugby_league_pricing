@@ -1,9 +1,13 @@
 # Local databases
 data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/*.parquet
 
 # Python cache
 __pycache__/
 *.py[cod]
+
 # Test and lint caches
 .pytest_cache/
 .ruff_cache/
