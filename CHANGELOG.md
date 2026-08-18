@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.0] Pricing - Ice to Eskimos
+
+- Base & Main Markets Pricers
+- Basic historical matrix pricing
+- some teams logos
+- dashboard edits to view prices
+
 ## [3.0.0] Players DB & Teamsheets
 
 - scrapes teamsheets and creates a teamsheets table in db
