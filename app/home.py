@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
 from rugby_league_pricing.ratings.simple_tries_pred import (
@@ -31,6 +32,66 @@ def get_model(year: int):
 
 
 st.title("🏉 Rugby League Match Predictor")
+
+DEFAULT_BLEND_WEIGHTS = {
+    "recent_form": 0.60,
+    "player_strength": 0.30,
+    "team_news": 0.10,
+}
+
+
+def normalise_weights(weights: dict[str, float]) -> dict[str, float]:
+    total = sum(weights.values())
+    if total <= 0:
+        return {key: 0.0 for key in weights}
+    return {key: value / total for key, value in weights.items()}
+
+
+st.sidebar.subheader("Adaptive blend controls")
+st.sidebar.caption(
+    "This keeps the recent-form strength as the anchor, then adds player-strength and team-news as corrective layers."
+)
+
+blend_weights = {}
+blend_weights["recent_form"] = st.sidebar.slider(
+    "Recent form weight",
+    min_value=0.0,
+    max_value=1.0,
+    value=DEFAULT_BLEND_WEIGHTS["recent_form"],
+    step=0.05,
+)
+blend_weights["player_strength"] = st.sidebar.slider(
+    "Player strength weight",
+    min_value=0.0,
+    max_value=1.0,
+    value=DEFAULT_BLEND_WEIGHTS["player_strength"],
+    step=0.05,
+)
+blend_weights["team_news"] = st.sidebar.slider(
+    "Team news weight",
+    min_value=0.0,
+    max_value=1.0,
+    value=DEFAULT_BLEND_WEIGHTS["team_news"],
+    step=0.05,
+)
+
+normalised_weights = normalise_weights(blend_weights)
+
+st.sidebar.write("Current blend profile:")
+st.sidebar.dataframe(
+    pd.DataFrame(
+        {
+            "weight": list(normalised_weights.values()),
+            "share": [f"{value:.0%}" for value in normalised_weights.values()],
+        },
+        index=list(normalised_weights.keys()),
+    ),
+    use_container_width=True,
+)
+
+st.sidebar.caption(
+    "Base formula: expected_team_strength = recent_form × w_form + player_strength × w_player + team_news × w_news"
+)
 
 try:
     results = get_results()
@@ -98,6 +159,21 @@ if st.button("Generate prediction", type="primary"):
     metric2.metric(
         f"{away_team} expected tries",
         f"{prediction.expected_away_tries:.2f}",
+    )
+
+    st.subheader("Adaptive blend profile")
+
+    blend_df = pd.DataFrame(
+        {
+            "weight": list(normalised_weights.values()),
+            "share": [f"{value:.0%}" for value in normalised_weights.values()],
+        },
+        index=list(normalised_weights.keys()),
+    )
+    st.dataframe(blend_df, use_container_width=True)
+
+    st.caption(
+        "The default values are aligned with the current evidence: recent form remains the anchor, player strength adds a meaningful correction, and team news only acts as the final override."
     )
 
     st.subheader("Result probabilities")

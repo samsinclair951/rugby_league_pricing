@@ -1,0 +1,14 @@
+fixture_id,team_id,player_id,player_name,position_id,version_type,notes
+2026-04-12_3_7,3,player_001,Jack Welsby,1,preview_expected_line_up,Expected to start at fullback
+2026-04-12_3_7,3,player_002,Tommy Makinson,5,preview_expected_line_up,
+2026-04-12_3_7,3,player_003,Mark Percival,4,preview_expected_line_up,
+2026-04-12_3_7,3,player_004,Konrad Hurrell,3,preview_expected_line_up,
+2026-04-12_3_7,3,player_005,Tee Ritson,2,preview_expected_line_up,
+2026-04-12_3_7,3,player_006,Jonny Lomax,6,preview_expected_line_up,
+2026-04-12_3_7,3,player_007,Lewis Dodd,7,preview_expected_line_up,
+2026-04-12_3_7,3,player_008,Alex Walmsley,8,preview_expected_line_up,
+2026-04-12_3_7,3,player_009,James Roby,9,preview_expected_line_up,
+2026-04-12_3_7,3,player_010,Matty Lees,10,preview_expected_line_up,
+2026-04-12_3_7,3,player_011,Sione Mata'utia,12,preview_expected_line_up,Doubt — ankle
+2026-04-12_3_7,3,player_012,Joe Batchelor,11,preview_expected_line_up,
+2026-04-12_3_7,3,player_013,Morgan Knowles,13,preview_expected_line_up,

@@ -15,19 +15,41 @@ from .upsert import upsert_expected_scores
 
 
 def _load_strength_multipliers(connection: sqlite3.Connection) -> pd.DataFrame:
-    """Load pre-match strength multipliers from the database."""
+    """Load pre-match strength multipliers from the database.
+
+    For each fixture/team pair, selects the row with the highest version_order
+    from team_news_version_types so that confirmed lineups take precedence over
+    previews, previews over early-week expectations, and expectations over the
+    baseline form model.
+    """
     return pd.read_sql_query(
         """
         SELECT
-            fixture_id,
-            match_date,
-            season,
-            team_id,
-            is_home,
-            scaled_attack_multiplier AS attack_multiplier,
-            scaled_defence_multiplier AS defence_multiplier
-        FROM strength_multipliers
-        ORDER BY match_date, fixture_id, is_home DESC
+            sm.fixture_id,
+            sm.match_date,
+            sm.season,
+            sm.team_id,
+            sm.is_home,
+            sm.version_type,
+            sm.scaled_attack_multiplier  AS attack_multiplier,
+            sm.scaled_defence_multiplier AS defence_multiplier
+        FROM strength_multipliers sm
+        INNER JOIN (
+            SELECT
+                fixture_id,
+                team_id,
+                MAX(vt.version_order) AS max_order
+            FROM strength_multipliers sm2
+            JOIN team_news_version_types vt
+                ON vt.version_type = sm2.version_type
+            GROUP BY fixture_id, team_id
+        ) latest
+            ON  sm.fixture_id = latest.fixture_id
+            AND sm.team_id    = latest.team_id
+        JOIN team_news_version_types vt2
+            ON  vt2.version_type  = sm.version_type
+            AND vt2.version_order = latest.max_order
+        ORDER BY sm.match_date, sm.fixture_id, sm.is_home DESC
         """,
         connection,
         parse_dates=["match_date"],

@@ -117,6 +117,23 @@ def initialise_database() -> None:
                     REFERENCES teams(team_id)
             );
 
+            CREATE TABLE IF NOT EXISTS fixture_source_mappings (
+                fixture_source_mapping_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fixture_id INTEGER NOT NULL,
+                source_name TEXT NOT NULL,
+                source_fixture_id TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (fixture_id)
+                    REFERENCES fixtures(fixture_id),
+
+                UNIQUE (
+                    source_name,
+                    source_fixture_id
+                )
+            );
+            
             CREATE TABLE IF NOT EXISTS results (
                 result_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 fixture_id TEXT NOT NULL UNIQUE,
@@ -248,6 +265,20 @@ def initialise_database() -> None:
                 )
             );
 
+            CREATE TABLE IF NOT EXISTS team_news_version_types (
+                version_type TEXT PRIMARY KEY,
+                version_order INTEGER NOT NULL UNIQUE,
+                description TEXT NOT NULL
+            );
+
+            INSERT OR IGNORE INTO team_news_version_types
+                (version_type, version_order, description)
+            VALUES
+                ('baseline',                    1, 'Form-only baseline, no lineup information'),
+                ('pre_preview_expected_line_up', 2, 'Early-week expected team based on known injuries and suspensions'),
+                ('preview_expected_line_up',     3, 'Updated expected team after preview released'),
+                ('confirmed_line_up',            4, 'Actual final confirmed team selection');
+
             CREATE TABLE IF NOT EXISTS strength_multipliers (
                 strength_multiplier_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 fixture_id TEXT NOT NULL,
@@ -256,6 +287,7 @@ def initialise_database() -> None:
                 is_home INTEGER NOT NULL,
                 match_date TEXT NOT NULL,
                 season INTEGER NOT NULL,
+                version_type TEXT NOT NULL DEFAULT 'baseline',
                 league_average_points REAL,
                 raw_attack_multiplier REAL,
                 raw_defence_multiplier REAL,
@@ -275,9 +307,64 @@ def initialise_database() -> None:
                 FOREIGN KEY (opponent_id)
                     REFERENCES teams(team_id),
 
+                FOREIGN KEY (version_type)
+                    REFERENCES team_news_version_types(version_type),
+
                 UNIQUE (
                     fixture_id,
-                    team_id
+                    team_id,
+                    version_type
+                )
+            );
+
+            CREATE TABLE IF NOT EXISTS player_ratings (
+                player_rating_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fixture_id TEXT NOT NULL,
+                team_id INTEGER NOT NULL,
+                player_id TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                position_id INTEGER,
+                season INTEGER NOT NULL,
+                attack_rating REAL NOT NULL,
+                defence_rating REAL NOT NULL,
+                overall_rating REAL NOT NULL,
+                reliability REAL NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                UNIQUE (
+                    fixture_id,
+                    team_id,
+                    player_id
+                )
+            );
+
+            CREATE TABLE IF NOT EXISTS expected_team_lineups (
+                expected_team_lineup_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fixture_id TEXT NOT NULL,
+                team_id INTEGER NOT NULL,
+                player_id TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                position_id INTEGER,
+                version_type TEXT NOT NULL,
+                notes TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (fixture_id)
+                    REFERENCES fixtures(fixture_id),
+
+                FOREIGN KEY (team_id)
+                    REFERENCES teams(team_id),
+
+                FOREIGN KEY (version_type)
+                    REFERENCES team_news_version_types(version_type),
+
+                UNIQUE (
+                    fixture_id,
+                    team_id,
+                    player_id,
+                    version_type
                 )
             );
 
@@ -452,6 +539,29 @@ def initialise_database() -> None:
 
             CREATE INDEX IF NOT EXISTS idx_strength_multipliers_fixture
                 ON strength_multipliers(fixture_id);
+
+            CREATE INDEX IF NOT EXISTS idx_strength_multipliers_version
+                ON strength_multipliers(
+                    version_type,
+                    fixture_id,
+                    team_id
+                );
+
+            CREATE INDEX IF NOT EXISTS idx_player_ratings_fixture_team
+                ON player_ratings(
+                    fixture_id,
+                    team_id
+                );
+
+            CREATE INDEX IF NOT EXISTS idx_player_ratings_player
+                ON player_ratings(player_id);
+
+            CREATE INDEX IF NOT EXISTS idx_expected_team_lineups_fixture
+                ON expected_team_lineups(
+                    fixture_id,
+                    team_id,
+                    version_type
+                );
 
             CREATE INDEX IF NOT EXISTS idx_expected_scores_match_date
                 ON expected_scores(match_date);

@@ -128,12 +128,11 @@ Each expected score combines three independent signals: the league baseline, opp
 - Maintain canonical team mappings
 - Store data in SQLite
 - Build recent-form & expected scores features
+- Player ratings
+- Team news analysis
 
 ## Roadmap
 
-- Match pricing model
 - Days since previous game
 - Weather/Seasonality
-- Player ratings
-- Team news analysis
-- Dashboard
+- Market Prices
