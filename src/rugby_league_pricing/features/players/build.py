@@ -220,13 +220,12 @@ def normalize_player_data(
     player_mappings = pd.read_sql_query(
         """
         SELECT
-            CAST(source_player_id AS TEXT) AS source_player_id,
-            player_id,
+            player_id AS canonical_player_id,
+            source_player_id,
             season,
             team_id
-        FROM players
+        FROM player_source_mappings
         WHERE source_name = 'patreon'
-          AND source_player_id IS NOT NULL
         """,
         connection,
     )
@@ -242,34 +241,21 @@ def normalize_player_data(
     )
 
     frame = frame.merge(
-        player_mappings.rename(
-            columns={"player_id": "canonical_player_id"}
-        ),
+        player_mappings,
         on=["source_player_id", "season", "team_id"],
         how="left",
         validate="many_to_one",
     )
 
     missing_player = frame["canonical_player_id"].isna()
+
     if missing_player.any():
-        examples = (
-            frame.loc[
-                missing_player,
-                [
-                    "source_player_id",
-                    "player_name",
-                    "season",
-                    "team_id",
-                ],
-            ]
-            .drop_duplicates()
-            .head(10)
-            .to_dict("records")
+        print(
+            f"Skipping {missing_player.sum()} player rows with no canonical "
+            f"player mapping."
         )
-        raise ValueError(
-            f"{missing_player.sum()} player rows could not be mapped to canonical "
-            f"players. Examples: {examples}"
-        )
+
+        frame = frame.loc[~missing_player].copy()
 
     frame["player_id"] = frame["canonical_player_id"].astype(str)
 
@@ -291,7 +277,14 @@ def _compute_ratings(players: pd.DataFrame) -> pd.DataFrame:
     players = players.copy()
 
     # Deduplicate so one player has one row per fixture/team.
-    id_cols = ["fixture_id", "player_id", "player_name", "position_id", "team_id"]
+    id_cols = [
+        "fixture_id",
+        "player_id",
+        "player_name",
+        "position_id",
+        "team_id",
+        "season",
+    ]
     numeric_cols = (
         players.select_dtypes(include=np.number)
         .columns.difference(id_cols)
@@ -302,6 +295,7 @@ def _compute_ratings(players: pd.DataFrame) -> pd.DataFrame:
             "player_name": "first",
             "position_id": "first",
             "team_id": "first",
+            "season": "first",
             **{c: "sum" for c in numeric_cols},
         }
     )
@@ -366,24 +360,6 @@ def build_player_ratings(
         raw=raw,
     )
     players = _compute_ratings(raw)
-
-    fixture_meta = pd.read_sql_query(
-        """
-        SELECT
-            fixture_id,
-            season
-        FROM fixtures
-        """,
-        connection,
-    )
-    fixture_meta["fixture_id"] = fixture_meta["fixture_id"].astype(str)
-
-    players = players.merge(
-        fixture_meta,
-        on="fixture_id",
-        how="left",
-        validate="many_to_one",
-    )
 
     if players["season"].isna().any():
         fallback = pd.to_numeric(
