@@ -58,6 +58,7 @@ def load_fixtures(
             FROM teamsheets ts
             WHERE ts.fixture_id = f.fixture_id
         ) = 2
+        AND f.season = 2026
     """
 
     params: list[str] = []
