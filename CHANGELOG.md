@@ -2,16 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
-## [3.2.0] player modelling & patreon source mappings
+## [3.3.0] player modelling & patreon source mappings
 
 - added some patreon data that has decent players stats
 - made some mappings for fixtures and players between patreon and rlp
 - initial very basic player modelling & analyses
 
-## [3.1.0] negative binomial & bivariate poisson analyses
+## [3.2.0] negative binomial & bivariate poisson analyses
 
 - notebook analysing similar use of negative binomial & bivariate poisson matrices.
 - blending with tilted historical emperical matrix to find the best blend.
+
+## [3.1.0] Pricing - Ice to Eskimos
+
+- Base & Main Markets Pricers
+- Basic historical matrix pricing
+- some teams logos
+- dashboard edits to view prices
 
 ## [3.0.0] Players DB & Teamsheets
 

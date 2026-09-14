@@ -12,6 +12,20 @@ from dashboard.data import (
     load_latest_historical_matrix,
     load_upcoming_fixtures,
 )
+from dashboard.formatting import fixture_date_heading, short_result_rows, signed_line
+from dashboard.pricing import price_fixture
+
+
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+TEAM_LOGOS_DIR = ASSETS_DIR / "teams"
+STEEDEN_BALL_PATH = ASSETS_DIR / "steeden_ball.png"
+SUPER_LEAGUE_LOGO_PATH = ASSETS_DIR / "super_league_logo.png"
+HERO_IMAGE_PATH = ASSETS_DIR / "hero_players.jpg"
+
+
+def _page_icon() -> str:
+    return str(STEEDEN_BALL_PATH) if STEEDEN_BALL_PATH.exists() else "🏉"
+
 
 from dashboard.formatting import (
     fixture_date_heading,
