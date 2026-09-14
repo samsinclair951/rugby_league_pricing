@@ -263,6 +263,68 @@ def upsert_team_source_mappings(
         )
 
 
+def get_team_id(
+    connection: sqlite3.Connection,
+    source_team_name: str,
+    season: int,
+) -> int:
+    """Resolve a Patreon team name to the canonical team_id."""
+
+    row = connection.execute(
+        """
+        SELECT team_id
+        FROM team_source_mappings
+        WHERE source_name = ?
+          AND source_team_name = ?
+          AND valid_from_season <= ?
+          AND (
+              valid_to_season IS NULL
+              OR valid_to_season >= ?
+          )
+        ORDER BY valid_from_season DESC
+        LIMIT 1
+        """,
+        (
+            SOURCE_NAME,
+            source_team_name,
+            season,
+            season,
+        ),
+    ).fetchone()
+
+    if row is None:
+        raise ValueError(
+            f"No Patreon mapping found for "
+            f"{source_team_name!r} in season {season}"
+        )
+
+    return int(row[0])
+
+
+def apply_team_ids(
+    connection: sqlite3.Connection,
+    matches: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Attach canonical team IDs to Patreon match records."""
+
+    for match in matches:
+        season = int(match["season"])
+
+        match["home_team_id"] = get_team_id(
+            connection,
+            str(match["home_team"]),
+            season,
+        )
+
+        match["away_team_id"] = get_team_id(
+            connection,
+            str(match["away_team"]),
+            season,
+        )
+
+    return matches
+
+
 def main() -> None:
     patreon_team_names = load_patreon_team_names()
 

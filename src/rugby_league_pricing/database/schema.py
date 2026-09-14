@@ -185,6 +185,58 @@ def initialise_database() -> None:
                     REFERENCES teams(team_id)
             );
 
+            CREATE TABLE IF NOT EXISTS player_source_mappings (
+                player_source_mapping_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                player_id TEXT NOT NULL,
+                source_name TEXT NOT NULL,
+                source_player_id TEXT NOT NULL,
+
+                season INTEGER,
+                team_id INTEGER,
+
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (team_id)
+                    REFERENCES teams(team_id),
+
+                UNIQUE (
+                    source_name,
+                    source_player_id,
+                    season,
+                    team_id
+                )
+            );
+
+            CREATE TABLE IF NOT EXISTS player_mapping_review (
+                player_mapping_review_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                source_name TEXT NOT NULL,
+                source_player_id TEXT NOT NULL,
+                source_player_name TEXT NOT NULL,
+
+                season INTEGER NOT NULL,
+                team_id INTEGER NOT NULL,
+
+                suggested_player_id TEXT,
+                suggested_player_name TEXT,
+                similarity_score REAL,
+
+                status TEXT NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending', 'approved', 'rejected')),
+
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                UNIQUE (
+                    source_name,
+                    source_player_id,
+                    season,
+                    team_id
+                )
+            );
+
             CREATE TABLE IF NOT EXISTS teamsheets (
                 fixture_id TEXT NOT NULL,
                 season INTEGER NOT NULL,
@@ -317,6 +369,83 @@ def initialise_database() -> None:
                 )
             );
 
+            CREATE TABLE IF NOT EXISTS team_selection_adjustments (
+                team_selection_adjustment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                fixture_id TEXT NOT NULL,
+                team_id INTEGER NOT NULL,
+                opponent_id INTEGER NOT NULL,
+                is_home INTEGER NOT NULL,
+                version_type TEXT NOT NULL,
+
+                -- Selection strength / audit
+                reference_attack_strength REAL,
+                selected_attack_strength REAL,
+                attack_selection_gap REAL,
+
+                reference_defence_strength REAL,
+                selected_defence_strength REAL,
+                defence_selection_gap REAL,
+
+                -- Raw player model inputs
+                player_attack_signal REAL,
+                player_defence_signal REAL,
+                player_strength_signal REAL,
+                top5_strength_on_field REAL,
+
+                props_8_10_strength REAL,
+                middle_pack_8_10_11_12_13_strength REAL,
+                halves_6_7_strength REAL,
+                spine_1_6_7_9_strength REAL,
+                combo_1_7_strength REAL,
+                combo_1_6_strength REAL,
+                hooker_9_strength REAL,
+                stand_off_6_strength REAL,
+                scrum_half_7_strength REAL,
+
+                -- Missing-core model inputs
+                missing_core_count INTEGER,
+                missing_core_overall_sum REAL,
+                missing_core_top3_sum REAL,
+
+                missing_props_8_10_sum REAL,
+                missing_middle_pack_8_10_11_12_13_sum REAL,
+                missing_halves_6_7_sum REAL,
+                missing_spine_1_6_7_9_sum REAL,
+                missing_combo_1_7_sum REAL,
+                missing_combo_1_6_sum REAL,
+                missing_hooker_9_sum REAL,
+                missing_stand_off_6_sum REAL,
+                missing_scrum_half_7_sum REAL,
+
+                -- Final blend-model output
+                player_log_adjustment REAL NOT NULL DEFAULT 0.0,
+                score_adjustment_factor REAL NOT NULL DEFAULT 1.0,
+
+                model_version TEXT,
+
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (fixture_id)
+                    REFERENCES fixtures(fixture_id),
+
+                FOREIGN KEY (team_id)
+                    REFERENCES teams(team_id),
+
+                FOREIGN KEY (opponent_id)
+                    REFERENCES teams(team_id),
+
+                FOREIGN KEY (version_type)
+                    REFERENCES team_news_version_types(version_type),
+
+                UNIQUE (
+                    fixture_id,
+                    team_id,
+                    version_type
+                )
+            );
+
             CREATE TABLE IF NOT EXISTS player_ratings (
                 player_rating_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 fixture_id TEXT NOT NULL,
@@ -365,6 +494,45 @@ def initialise_database() -> None:
                     team_id,
                     player_id,
                     version_type
+                )
+            );
+
+            CREATE TABLE IF NOT EXISTS player_blend_models (
+                model_version TEXT PRIMARY KEY,
+                trained_through_date TEXT NOT NULL,
+                ridge_alpha REAL NOT NULL,
+                intercept REAL NOT NULL,
+                missing_top3_threshold REAL NOT NULL,
+                missing_halves_threshold REAL NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS player_blend_coefficients (
+                model_version TEXT NOT NULL,
+                feature_name TEXT NOT NULL,
+                coefficient REAL NOT NULL,
+
+                FOREIGN KEY (model_version)
+                    REFERENCES player_blend_models(model_version),
+
+                PRIMARY KEY (
+                    model_version,
+                    feature_name
+                )
+            );
+
+            CREATE TABLE IF NOT EXISTS player_blend_scalers (
+                model_version TEXT NOT NULL,
+                feature_name TEXT NOT NULL,
+                feature_mean REAL NOT NULL,
+                feature_std REAL NOT NULL,
+
+                FOREIGN KEY (model_version)
+                    REFERENCES player_blend_models(model_version),
+
+                PRIMARY KEY (
+                    model_version,
+                    feature_name
                 )
             );
 
