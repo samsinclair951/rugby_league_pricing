@@ -6547,3 +6547,255 @@ fixture_id,fixture_url,player_id,player_name,position_id,team_id,opposition_id,t
 11273,https://www.superleague.co.uk/match-centre/report/44089,175,Patrick Mago,16,Wigan Warriors,Leeds Rhinos,0,0,0,0,8,3,19,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0
 11273,https://www.superleague.co.uk/match-centre/report/44089,979,Shea O'Connor,16,Wigan Warriors,Leeds Rhinos,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 11273,https://www.superleague.co.uk/match-centre/report/44089,866,Taylor Kerr,17,Wigan Warriors,Leeds Rhinos,0,0,0,0,10,3,21,0,0,0,1,0,0,1,1,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,915,Caleb Aekins,1,Bradford Bulls,York RLFC,0,0,0,0,5,14,97,2,0,0,0,0,0,0,2,2,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,16,Jayden Okunbor,2,Bradford Bulls,York RLFC,1,0,0,0,6,18,169,0,0,0,0,3,2,1,4,2,0,0,0,1,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,90,Waqa Blake,3,Bradford Bulls,York RLFC,0,0,0,0,6,13,112,0,0,0,0,1,0,1,1,1,1,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,58,Esan Marsters,14,Bradford Bulls,York RLFC,0,0,0,0,4,11,83,0,0,0,0,3,0,1,1,4,1,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,819,Dan Russell,4,Bradford Bulls,York RLFC,0,0,0,0,5,14,119,0,0,0,0,2,1,0,2,1,1,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,509,Connor Wynne,5,Bradford Bulls,York RLFC,0,0,0,0,2,7,44,0,0,0,1,1,0,0,0,2,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,438,Riley Dean,6,Bradford Bulls,York RLFC,1,0,0,0,29,11,24,4,1,0,0,1,0,0,4,1,0,0,0,1,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,140,Chris Atkin,7,Bradford Bulls,York RLFC,0,2,1,0,22,8,51,15,1,0,1,0,0,0,1,2,1,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,916,Ryan Sutton,8,Bradford Bulls,York RLFC,1,0,0,0,51,10,79,0,0,0,0,2,1,0,4,1,2,0,0,1,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,114,Andy Ackers,9,Bradford Bulls,York RLFC,0,0,0,0,72,4,23,0,1,0,3,0,0,0,3,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,919,Ebon Scurr,10,Bradford Bulls,York RLFC,0,0,0,0,59,14,109,0,0,0,0,5,1,2,1,0,1,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,962,Phoenix Steinwede,11,Bradford Bulls,York RLFC,0,0,0,0,52,5,30,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,14,Will Gardiner,12,Bradford Bulls,York RLFC,0,0,0,0,45,6,42,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,290,Joe Mellor,13,Bradford Bulls,York RLFC,0,0,0,0,67,9,35,0,0,0,0,3,0,1,2,0,1,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,145,Luke Hooley,14,Bradford Bulls,York RLFC,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,957,Jamie Gill,16,Bradford Bulls,York RLFC,0,0,0,0,25,4,13,0,0,0,0,1,0,2,1,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,220,Leon Ruan,18,Bradford Bulls,York RLFC,0,0,0,0,4,2,10,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,920,Eliot Peposhi,18,Bradford Bulls,York RLFC,0,0,0,0,18,8,36,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,889,Toa Mata'afa,1,York RLFC,Bradford Bulls,1,0,0,0,4,15,152,0,0,0,1,3,1,0,1,0,0,0,0,1,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,698,Ben Jones-Bishop,2,York RLFC,Bradford Bulls,1,0,0,0,10,16,112,0,1,0,0,2,1,1,0,0,1,0,0,1,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,891,Scott Galeano,3,York RLFC,Bradford Bulls,1,0,0,0,26,4,19,0,0,0,0,2,1,0,3,1,1,1,0,1,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,146,Sam Wood,4,York RLFC,Bradford Bulls,0,0,0,0,15,13,107,0,0,0,0,3,1,0,2,2,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,275,David Nofoaluma,5,York RLFC,Bradford Bulls,1,0,0,0,9,18,158,2,0,0,3,9,1,0,3,0,0,0,0,1,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,967,Cody Hunter,6,York RLFC,Bradford Bulls,0,5,1,0,9,9,37,6,0,0,0,2,0,0,1,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,892,Liam Harris,7,York RLFC,Bradford Bulls,0,0,0,0,26,8,25,17,1,0,0,1,0,3,4,0,1,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,585,Jordan Thompson,13,York RLFC,Bradford Bulls,0,0,0,0,30,15,87,0,0,0,0,2,0,0,1,1,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,286,Paul McShane,9,York RLFC,Bradford Bulls,0,0,0,0,23,0,0,6,1,0,0,0,0,0,2,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,206,Paul Vaughan,10,York RLFC,Bradford Bulls,0,0,0,1,16,16,157,0,0,0,0,7,0,3,0,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,895,Jesse Dee,11,York RLFC,Bradford Bulls,1,0,0,0,35,8,80,2,1,0,0,1,1,0,2,1,2,0,0,1,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,894,Oliver Field,12,York RLFC,Bradford Bulls,0,0,0,0,31,9,48,0,0,0,0,1,0,0,1,1,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,636,Ata Hingano,18,York RLFC,Bradford Bulls,0,0,0,0,17,9,45,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,78,Jonathan Bennison,14,York RLFC,Bradford Bulls,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,896,Jack Martin,16,York RLFC,Bradford Bulls,0,0,0,0,36,19,158,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,893,Xavier Va'a,8,York RLFC,Bradford Bulls,1,0,0,0,18,12,89,0,0,0,0,6,0,0,0,1,0,0,0,1,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,233,Denive Balmforth,17,York RLFC,Bradford Bulls,0,0,0,0,13,2,23,0,0,0,1,1,0,0,1,0,0,0,0,0,0,0
+11274,https://www.superleague.co.uk/match-centre/report/44094,274,Matthew Foster,18,York RLFC,Bradford Bulls,0,0,0,0,6,6,28,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,303,Logan Moy,1,Hull FC,Leeds Rhinos,1,0,0,0,6,16,147,0,0,0,3,3,1,0,1,0,0,0,0,1,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,229,Harvey Barron,2,Hull FC,Leeds Rhinos,0,0,0,0,3,15,60,0,0,0,0,3,0,0,0,4,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,2,Davy Litten,3,Hull FC,Leeds Rhinos,0,0,0,0,15,11,54,0,0,0,0,3,0,0,0,1,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,38,Tom Briscoe,4,Hull FC,Leeds Rhinos,0,0,0,0,7,11,42,0,1,0,1,1,0,2,0,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,37,Zak Hardaker,14,Hull FC,Leeds Rhinos,0,0,0,0,20,5,3,6,1,0,0,2,0,0,2,1,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,192,Arthur Romano,11,Hull FC,Leeds Rhinos,0,0,0,0,28,8,56,0,0,0,0,3,1,0,5,0,1,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,6,Lewis Martin,5,Hull FC,Leeds Rhinos,0,0,0,0,4,18,98,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,945,Jake Arthur,7,Hull FC,Leeds Rhinos,0,0,0,0,27,10,41,20,0,0,0,0,0,0,2,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,279,Herman Ese'ese,8,Hull FC,Leeds Rhinos,0,0,0,0,17,17,125,0,0,0,0,2,0,2,2,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,177,Harvie Hill,10,Hull FC,Leeds Rhinos,0,0,0,0,33,8,52,0,0,0,0,3,0,0,4,1,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,982,Lennon Clark,18,Hull FC,Leeds Rhinos,1,0,0,0,3,3,20,0,0,0,0,2,1,0,0,0,0,0,0,1,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,785,Ethan O'Neill,12,Hull FC,Leeds Rhinos,0,0,0,0,27,13,60,0,0,0,1,1,0,1,3,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,88,James Bell,13,Hull FC,Leeds Rhinos,0,0,0,0,26,13,80,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,869,Lloyd Kemp,9,Hull FC,Leeds Rhinos,1,3,0,0,61,7,58,0,0,0,3,3,1,0,3,0,1,0,0,1,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,232,Matty Laidlaw,16,Hull FC,Leeds Rhinos,0,0,0,0,18,1,13,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,68,Hugo Salabio,16,Hull FC,Leeds Rhinos,0,0,0,0,14,9,53,0,0,0,0,3,0,2,2,2,1,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,821,Will Hutchinson,17,Hull FC,Leeds Rhinos,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,699,Connor Bailey,6,Hull FC,Leeds Rhinos,0,0,0,0,46,6,46,2,0,0,0,1,0,0,2,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,22,Ryan Hall,2,Leeds Rhinos,Hull FC,0,0,0,0,3,18,144,0,0,0,1,2,1,2,0,2,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,951,Jack Bird,4,Leeds Rhinos,Hull FC,0,0,0,0,8,21,160,2,0,0,2,3,1,3,1,3,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,111,Ash Handley,1,Leeds Rhinos,Hull FC,0,0,0,0,3,27,274,0,0,0,0,2,1,0,2,2,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,110,Harry Newman,3,Leeds Rhinos,Hull FC,0,0,0,0,18,13,133,2,0,0,0,3,0,2,0,2,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,938,Maika Sivo,5,Leeds Rhinos,Hull FC,0,0,0,0,2,12,97,0,0,0,1,2,0,0,0,3,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,60,Jake Connor,6,Leeds Rhinos,Hull FC,0,2,0,0,14,9,17,28,0,0,0,0,0,0,3,1,1,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,112,Brodie Croft,7,Leeds Rhinos,Hull FC,0,0,0,0,23,16,59,6,0,0,1,0,0,1,0,1,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,113,Mikolaj Oledzki,8,Leeds Rhinos,Hull FC,0,0,0,0,23,4,11,0,0,0,0,0,0,0,2,0,1,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,121,Jarrod O'Connor,9,Leeds Rhinos,Hull FC,0,0,0,0,56,8,71,0,0,0,6,0,0,1,3,1,1,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,800,Keenan Palasia,13,Leeds Rhinos,Hull FC,0,0,0,0,24,13,102,0,0,0,0,0,0,2,5,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,801,Cooper Jenkins,16,Leeds Rhinos,Hull FC,0,0,0,0,15,9,61,0,0,0,0,1,0,0,2,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,134,Kallum Watkins,18,Leeds Rhinos,Hull FC,1,0,0,0,28,5,39,0,0,0,1,0,1,0,2,0,0,0,0,1,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,143,Chris Hankinson,12,Leeds Rhinos,Hull FC,1,0,0,0,42,10,57,0,0,0,1,2,1,0,3,1,1,0,0,1,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,854,Presley Cassell,11,Leeds Rhinos,Hull FC,0,0,0,0,26,9,59,0,0,0,0,1,0,1,1,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,984,Fergus McCormack,14,Leeds Rhinos,Hull FC,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,253,Tom Holroyd,16,Leeds Rhinos,Hull FC,0,0,0,0,22,12,104,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,1009,Matthew Lodge,10,Leeds Rhinos,Hull FC,0,0,0,0,17,14,88,0,1,0,0,6,0,3,2,0,0,0,0,0,0,0
+11275,https://www.superleague.co.uk/match-centre/report/44091,122,Cameron Smith,18,Leeds Rhinos,Hull FC,0,0,0,0,29,14,91,0,0,0,0,8,0,2,4,1,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,787,David Armstrong,1,Leigh Leopards,Wakefield Trinity,0,0,0,0,4,16,109,0,1,0,0,1,0,1,0,2,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,40,Josh Charnley,2,Leigh Leopards,Wakefield Trinity,0,0,0,0,8,16,119,0,0,0,0,4,1,0,3,0,1,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,263,Umyla Hanley,3,Leigh Leopards,Wakefield Trinity,0,0,0,0,22,18,129,0,0,0,1,2,0,0,3,2,2,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,154,Innes Senior,5,Leigh Leopards,Wakefield Trinity,1,0,0,0,7,15,168,0,0,0,0,9,3,0,1,2,0,0,0,1,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,913,Adam Cook,6,Leigh Leopards,Wakefield Trinity,0,0,2,0,17,10,38,10,0,0,0,1,0,0,2,0,1,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,41,Lachlan Lam,7,Leigh Leopards,Wakefield Trinity,0,0,0,0,21,13,47,13,0,0,0,2,0,0,0,0,1,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,841,Joe Ofahengaue,8,Leigh Leopards,Wakefield Trinity,0,0,0,0,50,13,75,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,151,Liam Horne,9,Leigh Leopards,Wakefield Trinity,0,0,0,0,24,2,29,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,45,Robbie Mulhern,10,Leigh Leopards,Wakefield Trinity,0,0,0,0,26,5,41,0,0,0,0,0,0,0,2,0,1,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,49,Owen Trout,11,Leigh Leopards,Wakefield Trinity,1,0,0,0,32,11,65,0,0,0,0,6,2,0,3,1,1,0,0,1,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,914,Jacob Alick-Wiencke,12,Leigh Leopards,Wakefield Trinity,0,0,0,0,35,6,36,0,0,0,0,0,0,0,2,2,1,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,53,Jack Hughes,18,Leigh Leopards,Wakefield Trinity,0,0,0,0,34,15,85,0,0,0,0,1,0,2,4,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,42,Gareth O'Brien,14,Leigh Leopards,Wakefield Trinity,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,824,Andrew Badrock,4,Leigh Leopards,Wakefield Trinity,0,0,0,0,19,6,35,0,0,0,1,2,0,0,0,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,450,Nathan Wilde,16,Leigh Leopards,Wakefield Trinity,0,0,0,0,16,5,39,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,50,Edwin Ipape,17,Leigh Leopards,Wakefield Trinity,0,0,0,0,19,6,35,0,0,0,3,1,0,0,3,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,44,Matt Davis,18,Leigh Leopards,Wakefield Trinity,0,0,0,0,27,7,58,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,310,Louis Brogan,13,Leigh Leopards,Wakefield Trinity,0,0,0,0,33,9,51,0,0,0,0,1,0,0,0,1,2,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,382,Max Jowitt,1,Wakefield Trinity,Leigh Leopards,0,3,3,0,2,11,82,0,0,0,0,1,0,1,3,3,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,849,Jayden Myers,2,Wakefield Trinity,Leigh Leopards,0,0,0,0,6,9,87,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,5,Cameron Scott,3,Wakefield Trinity,Leigh Leopards,1,0,0,0,6,16,110,0,0,0,0,3,1,3,3,0,0,0,0,1,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,31,Corey Hall,4,Wakefield Trinity,Leigh Leopards,0,0,0,0,14,17,105,4,1,0,0,1,0,1,5,0,1,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,184,Tom Johnstone,5,Wakefield Trinity,Leigh Leopards,2,0,0,0,8,16,93,0,0,0,0,7,2,0,0,0,0,0,0,1,1,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,314,Jack Sinfield,15,Wakefield Trinity,Leigh Leopards,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,313,Jake Trueman,6,Wakefield Trinity,Leigh Leopards,0,0,0,1,22,6,36,15,1,0,1,0,0,0,2,1,1,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,1008,Emre Guler,10,Wakefield Trinity,Leigh Leopards,0,0,0,0,26,13,99,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,921,Tyson Smoothy,9,Wakefield Trinity,Leigh Leopards,0,0,0,0,41,2,15,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,186,Mike McMeeken,8,Wakefield Trinity,Leigh Leopards,0,0,0,0,34,12,82,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,805,Isaiah Vagana,12,Wakefield Trinity,Leigh Leopards,0,0,0,0,22,14,109,0,0,0,0,5,0,1,1,2,1,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,902,Zac Lipowicz,11,Wakefield Trinity,Leigh Leopards,0,0,0,0,26,10,83,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,389,Jay Pitts,18,Wakefield Trinity,Leigh Leopards,0,0,0,0,35,12,68,0,0,0,0,1,0,0,2,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,388,Mason Lino,7,Wakefield Trinity,Leigh Leopards,0,0,0,0,18,6,40,14,0,0,0,1,0,0,1,0,1,1,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,803,Caius Faatili,16,Wakefield Trinity,Leigh Leopards,0,0,0,0,29,14,88,0,0,0,0,1,0,0,5,1,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,478,Harvey Smith,17,Wakefield Trinity,Leigh Leopards,0,0,0,0,12,1,12,0,0,0,1,1,0,0,3,0,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,923,Jazz Tevaga,13,Wakefield Trinity,Leigh Leopards,0,0,0,0,31,14,138,0,0,0,0,1,0,2,3,1,0,0,0,0,0,0
+11276,https://www.superleague.co.uk/match-centre/report/44092,99,Jordan Williams,18,Wakefield Trinity,Leigh Leopards,0,0,0,0,8,3,8,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,941,Luke Polselli,1,Toulouse Olympique,Warrington Wolves,0,0,0,0,2,16,135,0,1,0,0,4,1,1,2,1,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,964,Mathieu Pons,5,Toulouse Olympique,Warrington Wolves,1,0,0,0,9,15,179,0,0,0,0,3,2,0,1,1,1,0,0,1,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,927,Paul Ulberg,2,Toulouse Olympique,Warrington Wolves,1,0,0,0,12,17,113,0,0,0,0,2,1,1,0,0,0,0,0,1,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,548,Mathieu Jussaume,3,Toulouse Olympique,Warrington Wolves,0,0,0,0,20,13,95,0,0,0,0,2,0,0,2,3,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,925,Romeo Tropis,4,Toulouse Olympique,Warrington Wolves,1,0,0,0,7,13,58,0,0,0,0,2,1,1,2,2,0,0,0,1,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,282,Cesar Rouge,6,Toulouse Olympique,Warrington Wolves,0,1,2,0,18,10,31,17,1,2,1,2,0,0,1,2,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,928,Thomas Lacans,7,Toulouse Olympique,Warrington Wolves,0,0,0,0,13,4,13,10,1,0,0,1,0,1,0,1,1,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,554,Lambert Belmas,8,Toulouse Olympique,Warrington Wolves,0,0,0,0,31,11,75,0,0,0,0,2,0,1,0,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,93,Rob Butler,16,Toulouse Olympique,Warrington Wolves,0,0,0,0,24,9,81,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,929,Brendan Hands,9,Toulouse Olympique,Warrington Wolves,0,0,0,0,45,3,29,0,0,0,3,1,0,0,0,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,947,James Roumanos,10,Toulouse Olympique,Warrington Wolves,0,0,0,0,31,6,31,0,0,0,0,0,0,0,1,2,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,1001,Louis Grossemy,11,Toulouse Olympique,Warrington Wolves,0,0,0,0,44,11,73,2,0,0,0,0,0,0,2,0,2,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,930,Henry O'Kane,12,Toulouse Olympique,Warrington Wolves,0,0,0,0,29,8,46,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,12,Joe Cator,13,Toulouse Olympique,Warrington Wolves,0,0,0,0,17,6,30,0,0,0,0,0,0,1,2,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,244,Tiaki Chan,16,Toulouse Olympique,Warrington Wolves,0,0,0,0,24,13,104,0,0,0,0,7,0,1,3,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,516,Anthony Marion,17,Toulouse Olympique,Warrington Wolves,0,0,0,0,23,6,40,0,0,0,0,0,0,0,2,0,1,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,931,Hugo Garrigues,17,Toulouse Olympique,Warrington Wolves,0,0,0,0,4,2,14,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,843,AJ Wallace,18,Toulouse Olympique,Warrington Wolves,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,958,Lachlan Webster,2,Warrington Wolves,Toulouse Olympique,1,0,0,0,6,11,53,0,0,0,2,1,1,0,3,1,0,0,0,1,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,327,Jake Thewlis,5,Warrington Wolves,Toulouse Olympique,0,0,0,0,5,12,102,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,216,Arron Lindop,3,Warrington Wolves,Toulouse Olympique,2,0,0,0,6,17,118,2,1,0,0,2,0,1,1,2,0,0,0,1,1,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,908,Josh Smith,4,Warrington Wolves,Toulouse Olympique,1,0,0,0,10,21,171,0,0,0,1,1,1,1,1,0,0,0,0,1,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,228,Leon Hayes,7,Warrington Wolves,Toulouse Olympique,0,3,2,0,19,12,66,25,2,0,0,2,0,0,4,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,209,James Harrison,10,Warrington Wolves,Toulouse Olympique,0,0,0,0,29,9,74,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,326,Cai Taylor-Wray,1,Warrington Wolves,Toulouse Olympique,0,0,0,0,4,19,167,2,0,0,0,5,0,0,1,1,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,265,Luke Yates,8,Warrington Wolves,Toulouse Olympique,0,0,0,0,41,12,75,0,0,0,0,1,0,1,1,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,856,Tom McKinney,16,Warrington Wolves,Toulouse Olympique,0,0,0,0,21,9,68,0,0,0,0,0,1,0,1,2,1,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,994,Charlie McKler,13,Warrington Wolves,Toulouse Olympique,0,0,0,0,19,3,22,0,0,0,0,0,0,1,1,0,2,1,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,234,Max Wood,16,Warrington Wolves,Toulouse Olympique,1,0,0,0,27,11,72,0,0,0,0,2,1,1,2,0,0,0,0,1,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,205,Sam Powell,9,Warrington Wolves,Toulouse Olympique,0,0,0,0,24,1,3,0,0,0,1,0,0,0,2,0,1,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,845,Ben Hartill,17,Warrington Wolves,Toulouse Olympique,0,0,0,0,32,3,18,0,0,0,2,0,0,1,3,0,1,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,207,Adam Holroyd,12,Warrington Wolves,Toulouse Olympique,0,0,0,0,36,10,64,2,0,0,0,3,0,0,2,0,1,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,868,Ewan Smith,11,Warrington Wolves,Toulouse Olympique,0,0,0,0,41,7,48,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,1019,Daniel Coop,18,Warrington Wolves,Toulouse Olympique,0,0,0,0,16,6,30,0,0,0,0,1,0,0,2,0,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,1018,Patrick Irwin,6,Warrington Wolves,Toulouse Olympique,0,0,0,0,27,7,26,5,1,0,0,0,0,0,2,1,0,0,0,0,0,0
+11277,https://www.superleague.co.uk/match-centre/report/44093,1020,Tommy Rhodes,15,Warrington Wolves,Toulouse Olympique,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,1010,Harvey Horne,2,Hull Kingston Rovers,St Helens,0,0,0,0,12,12,96,0,0,0,0,2,0,0,3,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,476,Louix Gorman,3,Hull Kingston Rovers,St Helens,0,0,0,0,23,14,86,0,0,0,0,4,0,1,3,2,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,842,Noah Booth,4,Hull Kingston Rovers,St Helens,0,0,0,0,5,12,109,2,0,0,0,1,1,0,1,1,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,91,Lee Kershaw,5,Hull Kingston Rovers,St Helens,0,0,0,0,4,16,114,0,0,0,0,4,0,2,1,2,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,261,Jack Charles,6,Hull Kingston Rovers,St Helens,0,2,0,0,38,8,32,6,0,0,0,0,0,1,5,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,24,Mikey Lewis,7,Hull Kingston Rovers,St Helens,0,0,0,0,13,6,46,9,0,0,0,3,0,0,3,1,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,859,Declan Murphy,14,Hull Kingston Rovers,St Helens,0,0,0,0,2,2,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,477,Cobie Wainhouse,10,Hull Kingston Rovers,St Helens,0,0,0,0,37,7,46,0,0,0,0,1,0,0,2,0,2,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,335,Zach Fishwick,8,Hull Kingston Rovers,St Helens,0,0,0,0,30,10,66,0,0,0,0,0,0,0,3,0,1,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,835,Bill Leyland,9,Hull Kingston Rovers,St Helens,1,0,0,0,54,8,81,0,0,0,7,4,1,1,5,2,1,0,0,1,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,1012,Alfie Woods,13,Hull Kingston Rovers,St Helens,0,0,0,0,48,11,90,0,0,0,0,5,0,0,3,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,1011,Frankie Dearlove,11,Hull Kingston Rovers,St Helens,0,0,0,0,36,11,62,0,0,0,1,6,0,1,5,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,1021,Flynn Holden,1,Hull Kingston Rovers,St Helens,1,0,0,0,2,8,96,0,0,0,0,4,2,0,1,2,0,0,0,1,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,370,Ryan Westerman,12,Hull Kingston Rovers,St Helens,0,0,0,0,31,7,55,0,0,0,0,2,0,0,2,1,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,1022,Alex Gorman,15,Hull Kingston Rovers,St Helens,0,0,0,0,2,1,6,2,0,0,0,0,0,0,1,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,1023,Theo Middlemas,18,Hull Kingston Rovers,St Helens,0,0,0,0,29,5,16,0,0,0,0,2,0,0,4,0,1,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,1024,Alfie Petty,16,Hull Kingston Rovers,St Helens,0,0,0,0,7,3,19,0,0,0,0,0,0,0,2,1,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,1025,Harrison Horne,15,Hull Kingston Rovers,St Helens,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,806,Tristan Sailor,5,St Helens,Hull Kingston Rovers,0,4,0,0,1,17,126,1,0,0,2,5,2,1,0,3,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,331,Jacob Douglas,2,St Helens,Hull Kingston Rovers,0,0,0,0,5,11,116,0,0,0,0,0,0,1,1,3,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,76,Mark Percival,4,St Helens,Hull Kingston Rovers,1,1,0,0,11,21,162,0,1,0,2,5,2,2,1,1,0,0,0,1,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,73,Jack Welsby,1,St Helens,Hull Kingston Rovers,0,0,0,0,3,23,157,5,1,0,1,3,0,6,1,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,129,Deon Cross,3,St Helens,Hull Kingston Rovers,1,0,0,0,11,10,64,0,0,0,0,3,1,0,1,1,0,0,0,1,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,343,Harry Robertson,6,St Helens,Hull Kingston Rovers,1,0,0,0,33,11,110,4,0,0,1,4,1,1,2,0,3,0,0,1,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,79,Jonny Lomax,7,St Helens,Hull Kingston Rovers,2,1,0,0,8,9,52,5,1,0,0,2,1,0,2,0,0,0,0,1,1,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,911,David Klemmer,8,St Helens,Hull Kingston Rovers,0,0,0,0,25,13,106,0,0,0,0,1,0,2,3,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,955,Tom Humphreys,9,St Helens,Hull Kingston Rovers,0,0,0,0,32,2,19,0,0,0,0,2,0,0,5,1,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,990,Daniel Suluka-Fifita,10,St Helens,Hull Kingston Rovers,0,0,0,0,46,18,166,0,0,0,0,2,0,0,1,0,1,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,912,Jacob Host,16,St Helens,Hull Kingston Rovers,1,0,0,0,18,13,96,0,0,0,0,5,1,0,0,0,0,0,0,1,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,995,Billy Keeley,11,St Helens,Hull Kingston Rovers,0,0,0,0,40,4,25,0,0,0,0,1,0,0,7,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,352,Jed Cartwright,18,St Helens,Hull Kingston Rovers,0,0,0,0,18,5,52,0,1,0,0,2,2,2,1,1,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,84,Curtis Sironen,12,St Helens,Hull Kingston Rovers,0,0,0,0,26,14,121,2,0,0,0,1,0,2,1,1,2,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,142,Joe Shorrocks,13,St Helens,Hull Kingston Rovers,0,0,0,0,33,6,27,2,0,0,1,2,0,1,9,0,1,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,1002,Jack Campbell,14,St Helens,Hull Kingston Rovers,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,1000,Chris Matagi,18,St Helens,Hull Kingston Rovers,0,0,0,0,8,4,72,0,0,0,0,6,1,0,1,0,0,0,0,0,0,0
+11278,https://www.superleague.co.uk/match-centre/report/44095,999,Matthew Evans,18,St Helens,Hull Kingston Rovers,0,0,0,0,11,5,35,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,798,Nick Cotric,4,Catalans Dragons,Wigan Warriors,0,0,0,0,6,16,137,0,0,0,3,12,1,5,2,1,2,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,836,Leo Darrelatour,2,Catalans Dragons,Wigan Warriors,0,0,0,0,4,10,73,0,0,0,2,1,0,0,2,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,847,Clement Martin,3,Catalans Dragons,Wigan Warriors,0,0,0,0,6,7,70,0,0,0,0,5,0,1,0,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,284,Guillermo Aispuro-Bichet,6,Catalans Dragons,Wigan Warriors,0,1,0,0,26,11,88,3,1,0,2,0,0,0,2,0,1,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,74,Tommy Makinson,5,Catalans Dragons,Wigan Warriors,0,0,0,0,2,14,99,2,0,0,1,3,0,1,2,1,2,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,80,Lewis Dodd,7,Catalans Dragons,Wigan Warriors,0,0,0,0,26,6,50,15,0,0,1,0,1,0,2,1,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,901,Josh Allen,8,Catalans Dragons,Wigan Warriors,0,0,0,0,29,11,69,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,289,Ugo Tison,9,Catalans Dragons,Wigan Warriors,1,0,0,0,47,3,35,2,0,0,0,1,0,0,1,0,1,0,0,1,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,273,Franck Maria,16,Catalans Dragons,Wigan Warriors,0,0,0,0,28,9,58,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,187,Romain Navarrete,10,Catalans Dragons,Wigan Warriors,0,0,0,0,21,6,53,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,225,Benjamin Garcia,12,Catalans Dragons,Wigan Warriors,0,1,0,0,30,6,44,0,0,0,0,2,0,1,3,1,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,876,Lenny Marc,1,Catalans Dragons,Wigan Warriors,0,0,0,0,4,13,92,0,0,0,0,4,0,0,1,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,223,Matthieu Laguerre,11,Catalans Dragons,Wigan Warriors,0,0,0,0,39,14,92,0,1,0,0,2,1,0,5,2,1,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,190,Julian Bousquet,13,Catalans Dragons,Wigan Warriors,0,0,0,0,35,12,75,0,0,0,0,0,0,0,4,2,1,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,846,Giovanni Descalzi,16,Catalans Dragons,Wigan Warriors,0,0,0,0,41,8,76,0,0,0,0,1,0,1,1,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,334,Harvey Wilson,18,Catalans Dragons,Wigan Warriors,0,0,0,0,14,2,19,0,0,0,1,1,1,0,1,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,937,Alexis Lis,18,Catalans Dragons,Wigan Warriors,1,0,0,0,30,6,46,0,0,0,2,3,0,1,1,1,0,0,0,1,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,120,Mickael Goudemand,18,Catalans Dragons,Wigan Warriors,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,163,Jai Field,1,Wigan Warriors,Catalans Dragons,1,0,0,0,0,17,139,0,0,0,0,5,0,0,0,0,0,0,0,1,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,975,Austin Daniel,2,Wigan Warriors,Catalans Dragons,1,0,0,0,1,11,78,0,0,0,0,1,1,0,0,0,0,0,0,1,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,168,Adam Keighran,3,Wigan Warriors,Catalans Dragons,1,7,1,0,14,5,110,0,0,0,0,1,0,0,3,1,0,0,0,1,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,243,Zach Eckersley,4,Wigan Warriors,Catalans Dragons,1,0,0,0,14,10,133,0,1,0,0,3,3,1,4,0,0,0,0,1,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,167,Liam Marshall,5,Wigan Warriors,Catalans Dragons,2,0,0,0,3,21,162,0,0,0,1,3,2,0,1,1,0,0,0,1,1,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,165,Bevan French,6,Wigan Warriors,Catalans Dragons,0,0,0,0,11,13,52,13,2,0,0,1,0,0,5,2,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,169,Harry Smith,7,Wigan Warriors,Catalans Dragons,1,0,0,0,16,12,37,17,1,0,0,1,1,0,6,0,0,0,0,1,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,311,Ethan Havard,8,Wigan Warriors,Catalans Dragons,0,0,0,0,22,10,67,0,0,0,0,0,1,0,2,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,178,Brad O'Neill,9,Wigan Warriors,Catalans Dragons,1,0,0,0,44,6,50,0,0,0,4,5,1,0,2,0,0,0,0,1,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,180,Luke Thompson,10,Wigan Warriors,Catalans Dragons,0,0,0,0,33,11,107,0,0,0,0,1,0,1,1,0,1,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,173,Liam Farrell,18,Wigan Warriors,Catalans Dragons,1,0,1,0,12,9,113,0,1,0,0,2,2,0,1,0,0,0,0,1,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,136,Oliver Partington,11,Wigan Warriors,Catalans Dragons,0,0,0,0,35,7,49,0,0,0,0,2,0,1,2,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,852,Kian McDermott,18,Wigan Warriors,Catalans Dragons,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,176,Kaide Ellis,13,Wigan Warriors,Catalans Dragons,0,0,0,0,30,14,84,0,0,0,0,0,0,1,1,2,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,175,Patrick Mago,16,Wigan Warriors,Catalans Dragons,0,0,0,0,14,13,99,0,0,0,0,4,0,2,1,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,866,Taylor Kerr,17,Wigan Warriors,Catalans Dragons,0,0,0,0,16,6,33,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,330,Sam Walters,18,Wigan Warriors,Catalans Dragons,0,0,0,0,19,23,184,0,0,0,0,1,0,1,1,1,1,0,0,0,0,0
+11279,https://www.superleague.co.uk/match-centre/report/44096,271,Junior Nsemba,12,Wigan Warriors,Catalans Dragons,0,0,0,0,19,15,103,0,0,0,0,2,0,1,4,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,473,Phoenix Laulu-Togaga'e,1,Castleford Tigers,Huddersfield Giants,0,0,0,0,4,16,134,0,0,0,0,5,0,2,2,3,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,1013,Daniel Sarbah,2,Castleford Tigers,Huddersfield Giants,0,0,0,0,5,17,175,0,0,0,0,3,1,1,0,4,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,247,Alex Mellor,3,Castleford Tigers,Huddersfield Giants,0,0,0,0,12,8,52,0,0,0,0,0,0,0,2,1,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,935,Krystian Mapapalangi,4,Castleford Tigers,Huddersfield Giants,0,0,0,0,13,11,137,2,0,0,0,3,2,0,0,2,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,298,Louis Senior,5,Castleford Tigers,Huddersfield Giants,0,0,0,0,10,16,147,0,0,0,0,0,1,0,2,1,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,792,Daejarn Asi,7,Castleford Tigers,Huddersfield Giants,1,0,0,0,19,3,19,16,0,0,0,0,1,0,2,0,0,0,0,1,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,170,Tyler Dupree,16,Castleford Tigers,Huddersfield Giants,0,0,0,0,20,7,37,0,0,0,0,0,0,2,1,2,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,434,Liam Hood,9,Castleford Tigers,Huddersfield Giants,1,0,0,0,29,4,30,0,1,0,3,1,1,1,0,0,0,0,0,1,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,158,George Lawler,10,Castleford Tigers,Huddersfield Giants,0,0,0,0,35,11,85,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,10,Jordan Lane,11,Castleford Tigers,Huddersfield Giants,1,0,0,0,42,9,80,0,1,0,0,4,1,1,2,0,0,0,0,1,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,944,George Hirst,18,Castleford Tigers,Huddersfield Giants,0,0,0,0,17,2,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,960,Brock Greacen,12,Castleford Tigers,Huddersfield Giants,0,0,0,0,44,7,68,0,0,0,0,2,1,0,0,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,857,Joe Stimson,13,Castleford Tigers,Huddersfield Giants,0,0,0,0,51,4,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,280,Ben McNamara,6,Castleford Tigers,Huddersfield Giants,0,2,1,0,27,7,45,1,0,0,0,0,0,0,7,3,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,157,Sam Hall,16,Castleford Tigers,Huddersfield Giants,0,0,0,0,37,5,55,0,0,0,0,1,0,0,2,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,996,Lazarus Vaalepu,16,Castleford Tigers,Huddersfield Giants,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,155,Cain Robb,17,Castleford Tigers,Huddersfield Giants,0,0,0,0,31,2,0,0,0,0,0,1,0,0,2,0,1,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,13,Jack Brown,8,Castleford Tigers,Huddersfield Giants,0,0,0,0,50,6,45,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,19,Niall Evalds,1,Huddersfield Giants,Castleford Tigers,0,0,0,0,9,7,52,2,0,0,1,0,1,0,3,1,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,829,Taane Milne,2,Huddersfield Giants,Castleford Tigers,2,0,0,0,4,30,231,0,0,0,0,2,2,3,0,0,2,0,0,1,1,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,201,Connor Wrench,3,Huddersfield Giants,Castleford Tigers,1,0,0,0,7,15,105,0,1,0,0,0,1,0,3,1,0,0,0,1,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,816,Jacob Gagai,4,Huddersfield Giants,Castleford Tigers,2,0,0,0,17,17,168,0,0,0,0,10,2,0,1,0,0,0,0,1,1,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,877,Lewis Jagger,5,Huddersfield Giants,Castleford Tigers,1,0,0,0,8,14,79,0,0,0,0,2,1,0,1,1,1,0,0,1,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,237,Tuimoala Lolohea,6,Huddersfield Giants,Castleford Tigers,0,7,1,0,14,10,11,20,2,0,0,0,0,1,3,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,71,Adam Clune,7,Huddersfield Giants,Castleford Tigers,0,0,0,0,24,9,20,6,3,0,0,0,0,0,5,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,850,Tristan Powell,8,Huddersfield Giants,Castleford Tigers,1,0,0,0,28,7,58,0,0,0,0,3,1,0,1,0,1,0,0,1,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,817,Zac Woolford,9,Huddersfield Giants,Castleford Tigers,1,0,0,0,44,8,67,0,0,0,3,1,1,0,0,0,1,0,0,1,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,33,George King,10,Huddersfield Giants,Castleford Tigers,0,0,0,0,17,16,124,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,294,Joe Greenwood,12,Huddersfield Giants,Castleford Tigers,0,0,0,0,30,19,139,0,1,0,0,3,0,1,0,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,64,Sam Hewitt,11,Huddersfield Giants,Castleford Tigers,0,0,0,0,34,14,80,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,277,Harry Rushton,13,Huddersfield Giants,Castleford Tigers,0,0,0,0,20,7,31,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,395,Tanguy Zenon,14,Huddersfield Giants,Castleford Tigers,0,1,0,0,0,3,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,96,Oli Leyland,15,Huddersfield Giants,Castleford Tigers,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,355,Kieran Rush,15,Huddersfield Giants,Castleford Tigers,0,0,0,0,6,1,4,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,67,Fenton Rogers,16,Huddersfield Giants,Castleford Tigers,0,0,0,0,10,7,66,0,0,0,0,1,0,0,1,0,0,0,1,0,0,0
+11280,https://www.superleague.co.uk/match-centre/report/44090,340,Jack Billington,18,Huddersfield Giants,Castleford Tigers,0,0,0,0,11,10,108,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
