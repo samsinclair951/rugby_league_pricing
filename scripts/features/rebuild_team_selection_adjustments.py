@@ -9,6 +9,12 @@ from pathlib import Path
 import pandas as pd
 import time
 
+from rugby_league_pricing.features.strength_multipliers.blended_final import (
+    predict_from_stored_model,
+)
+from rugby_league_pricing.features.strength_multipliers.model_store import (
+    load_latest_player_blend_model,
+)
 from rugby_league_pricing.features.team_lineups.adjustment_upsert import (
     upsert_team_selection_adjustments,
 )
@@ -26,19 +32,16 @@ DATABASE_PATH = (
     / "rugby_league_pricing.db"
 )
 
-VERSION_TYPE = "confirmed_line_up"
+DEFAULT_VERSION_TYPE = "confirmed_line_up"
 
 
 def load_fixtures(
     connection: sqlite3.Connection,
     *,
+    version_type: str,
     start_date: str | None = None,
     end_date: str | None = None,
 ) -> pd.DataFrame:
-    """
-    Load historical fixtures with teamsheets available
-    for both sides.
-    """
 
     sql = """
         SELECT
@@ -47,38 +50,47 @@ def load_fixtures(
             f.season,
             f.home_team_id,
             f.away_team_id
-
         FROM fixtures f
-
-        JOIN results r
-            ON r.fixture_id = f.fixture_id
-
-        WHERE (
-            SELECT COUNT(DISTINCT ts.team_id)
-            FROM teamsheets ts
-            WHERE ts.fixture_id = f.fixture_id
-        ) = 2
-        AND f.season = 2026
+        WHERE f.season = 2026
     """
 
-    params: list[str] = []
+    params: list[object] = []
+
+    if version_type == "confirmed_line_up":
+        sql += """
+            AND EXISTS (
+                SELECT 1
+                FROM results r
+                WHERE r.fixture_id = f.fixture_id
+            )
+            AND (
+                SELECT COUNT(DISTINCT ts.team_id)
+                FROM teamsheets ts
+                WHERE ts.fixture_id = f.fixture_id
+            ) = 2
+        """
+
+    else:
+        sql += """
+            AND (
+                SELECT COUNT(DISTINCT etl.team_id)
+                FROM expected_team_lineups etl
+                WHERE etl.fixture_id = f.fixture_id
+                  AND etl.version_type = ?
+            ) = 2
+        """
+        params.append(version_type)
 
     if start_date is not None:
-        sql += """
-            AND f.match_date >= ?
-        """
+        sql += " AND DATE(f.match_date) >= ?"
         params.append(start_date)
 
     if end_date is not None:
-        sql += """
-            AND f.match_date <= ?
-        """
+        sql += " AND DATE(f.match_date) <= ?"
         params.append(end_date)
 
     sql += """
-        ORDER BY
-            f.match_date,
-            f.fixture_id
+        ORDER BY f.match_date, f.fixture_id
     """
 
     return pd.read_sql_query(
@@ -89,14 +101,45 @@ def load_fixtures(
     )
 
 
+def fixture_adjustments_exist(
+    connection: sqlite3.Connection,
+    fixture_id: str,
+    home_team_id: int,
+    away_team_id: int,
+    version_type: str,
+) -> bool:
+    row = connection.execute(
+        """
+        SELECT COUNT(DISTINCT team_id)
+        FROM team_selection_adjustments
+        WHERE fixture_id = ?
+          AND version_type = ?
+          AND team_id IN (?, ?)
+        """,
+        (
+            fixture_id,
+            version_type,
+            home_team_id,
+            away_team_id,
+        ),
+    ).fetchone()
+
+    return row[0] == 2
+
+
 def build_fixture_adjustments(
     connection: sqlite3.Connection,
     fixture: pd.Series,
+    version_type: str,
 ) -> pd.DataFrame:
-    """Build raw player-selection features for both teams."""
+    """Build and predict player-selection adjustments for both teams."""
 
     fixture_id = str(
         fixture["fixture_id"]
+    )
+
+    match_date = pd.Timestamp(
+        fixture["match_date"]
     )
 
     home_team_id = int(
@@ -127,7 +170,7 @@ def build_fixture_adjustments(
             connection=connection,
             fixture_id=fixture_id,
             team_id=team["team_id"],
-            version_type=VERSION_TYPE,
+            version_type=version_type,
         )
 
         strength["opponent_id"] = (
@@ -138,23 +181,30 @@ def build_fixture_adjustments(
             team["is_home"]
         )
 
-        # Historical backfill stores raw features only.
-        # Model outputs get generated later.
-        strength["player_log_adjustment"] = 0.0
-        strength["score_adjustment_factor"] = 1.0
-        strength["model_version"] = None
-
         rows.append(strength)
 
-    return pd.concat(
+    lineup_strength = pd.concat(
         rows,
         ignore_index=True,
     )
+
+    stored_model = load_latest_player_blend_model(
+        connection=connection,
+        before_date=match_date,
+    )
+
+    adjustments = predict_from_stored_model(
+        lineup_strength=lineup_strength,
+        stored_model=stored_model,
+    )
+
+    return adjustments
 
 
 def rebuild_team_selection_adjustments(
     connection: sqlite3.Connection,
     *,
+    version_type: str,
     start_date: str | None = None,
     end_date: str | None = None,
 ) -> None:
@@ -162,6 +212,7 @@ def rebuild_team_selection_adjustments(
 
     fixtures = load_fixtures(
         connection,
+        version_type=version_type,
         start_date=start_date,
         end_date=end_date,
     )
@@ -183,6 +234,16 @@ def rebuild_team_selection_adjustments(
     skipped = 0
 
     for i, fixture in fixtures.iterrows():
+
+        if fixture_adjustments_exist(
+            connection,
+            fixture_id=fixture["fixture_id"],
+            home_team_id=fixture["home_team_id"],
+            away_team_id=fixture["away_team_id"],
+            version_type=version_type,
+        ):
+            print(f"Skipping {fixture['fixture_id']} - adjustments already exist for both teams.")
+            continue
         started = time.perf_counter()
         fixture_id = fixture["fixture_id"]
         match_date = fixture["match_date"]
@@ -197,6 +258,7 @@ def rebuild_team_selection_adjustments(
             adjustment_rows = build_fixture_adjustments(
                 connection=connection,
                 fixture=fixture,
+                version_type=version_type,
             )
 
             upsert_team_selection_adjustments(
@@ -241,6 +303,17 @@ def main() -> None:
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
+            "--version-type",
+            type=str,
+            default="confirmed_line_up",
+            choices=[
+                "confirmed_line_up",
+                "pre_preview_expected_line_up",
+                "preview_expected_line_up",
+            ],
+        )
+
+    parser.add_argument(
         "--start-date",
         type=str,
         default=None,
@@ -268,6 +341,7 @@ def main() -> None:
         )
         rebuild_team_selection_adjustments(
             connection,
+            version_type=args.version_type,
             start_date=args.start_date,
             end_date=args.end_date,
         )

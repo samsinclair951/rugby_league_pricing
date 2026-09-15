@@ -230,7 +230,7 @@ def build_blended_score_matrix(
     expected_away_score: float,
     *,
     max_score: int = 100,
-    historical_weight: float = 0.20,
+    historical_weight: float = 0.60,
     scale_strength: float = 1.0,
     home_score_column: str = "home_score",
     away_score_column: str = "away_score",

@@ -84,10 +84,12 @@ def upsert_recent_form(
 
 def rebuild_recent_form(
     connection: sqlite3.Connection,
+    source_name: str = "rugby_league_project",
 ) -> int:
     """Recalculate and upsert all recent-form rows."""
     recent_form = build_recent_form(
         connection=connection,
+        source_name=source_name,
     )
     return upsert_recent_form(
         connection=connection,

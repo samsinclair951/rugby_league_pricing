@@ -49,11 +49,23 @@ def load_training_frame(
 
             tsa.player_strength_signal,
             tsa.top5_strength_on_field,
+            tsa.props_8_10_strength,
+            tsa.middle_pack_8_10_11_12_13_strength,
+            tsa.halves_6_7_strength,
+            tsa.spine_1_6_7_9_strength,
+            tsa.hooker_9_strength,
+            tsa.stand_off_6_strength,
+            tsa.scrum_half_7_strength,
 
             tsa.missing_core_overall_sum,
             tsa.missing_core_top3_sum,
+            tsa.missing_props_8_10_sum,
+            tsa.missing_middle_pack_8_10_11_12_13_sum,
             tsa.missing_halves_6_7_sum,
             tsa.missing_spine_1_6_7_9_sum,
+            tsa.missing_hooker_9_sum,
+            tsa.missing_stand_off_6_sum,
+            tsa.missing_scrum_half_7_sum,
 
             sm.scaled_attack_multiplier,
             es.expected_home_score,

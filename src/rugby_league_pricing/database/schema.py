@@ -570,7 +570,7 @@ def initialise_database() -> None:
             CREATE TABLE IF NOT EXISTS expected_score_predictions (
                 expected_score_prediction_id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-                fixture_id TEXT NOT NULL UNIQUE,
+                fixture_id TEXT NOT NULL,
                 prediction_date TEXT NOT NULL,
 
                 home_team_id INTEGER NOT NULL,
@@ -588,6 +588,8 @@ def initialise_database() -> None:
                 expected_home_score REAL NOT NULL,
                 expected_away_score REAL NOT NULL,
 
+                version_type TEXT NOT NULL,
+
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -598,7 +600,12 @@ def initialise_database() -> None:
                     REFERENCES teams(team_id),
 
                 FOREIGN KEY (away_team_id)
-                    REFERENCES teams(team_id)
+                    REFERENCES teams(team_id),
+
+                UNIQUE (
+                    fixture_id,
+                    version_type
+                )
             );
 
             CREATE TABLE IF NOT EXISTS historical_score_matrices (
@@ -613,6 +620,34 @@ def initialise_database() -> None:
                 PRIMARY KEY (
                     matrix_version,
                     as_of_date
+                )
+            );
+
+            CREATE TABLE true_prices (
+                price_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                fixture_id TEXT NOT NULL,
+                version_type TEXT NOT NULL,
+
+                market TEXT NOT NULL,
+                selection TEXT NOT NULL,
+                line REAL,
+
+                probability REAL NOT NULL,
+                decimal_price REAL NOT NULL,
+
+                expected_home_score REAL NOT NULL,
+                expected_away_score REAL NOT NULL,
+
+                model_version TEXT NOT NULL,
+                generated_at TEXT NOT NULL,
+
+                UNIQUE (
+                    fixture_id,
+                    version_type,
+                    market,
+                    selection,
+                    line
                 )
             );
 

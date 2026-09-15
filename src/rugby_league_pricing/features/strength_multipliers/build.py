@@ -42,6 +42,111 @@ def load_recent_form(connection: sqlite3.Connection) -> pd.DataFrame:
     return recent_form
 
 
+def add_upcoming_fixture_rows(
+    connection: sqlite3.Connection,
+    recent_form: pd.DataFrame,
+) -> pd.DataFrame:
+    """Add pre-match recent-form rows for fixtures without results."""
+
+    upcoming = pd.read_sql_query(
+        """
+        SELECT
+            f.fixture_id,
+            f.match_date,
+            f.season,
+            f.home_team_id,
+            f.away_team_id
+        FROM fixtures f
+        LEFT JOIN results r
+            ON r.fixture_id = f.fixture_id
+        WHERE r.fixture_id IS NULL
+        ORDER BY f.match_date, f.fixture_id
+        """,
+        connection,
+        parse_dates=["match_date"],
+    )
+
+    if upcoming.empty:
+        return recent_form
+
+    rows = []
+
+    for fixture in upcoming.itertuples(index=False):
+        teams = [
+            (
+                int(fixture.home_team_id),
+                int(fixture.away_team_id),
+                1,
+            ),
+            (
+                int(fixture.away_team_id),
+                int(fixture.home_team_id),
+                0,
+            ),
+        ]
+
+        for team_id, opponent_id, is_home in teams:
+            history = (
+                recent_form.loc[
+                    (recent_form["team_id"] == team_id)
+                    & (
+                        recent_form["match_date"]
+                        < fixture.match_date
+                    )
+                ]
+                .sort_values("match_date")
+            )
+
+            row = {
+                "fixture_id": fixture.fixture_id,
+                "team_id": team_id,
+                "opponent_id": opponent_id,
+                "is_home": is_home,
+                "match_date": fixture.match_date,
+                "season": int(fixture.season),
+
+                # No result yet.
+                "points_for": float("nan"),
+                "points_against": float("nan"),
+
+                "history_games_before": len(history),
+            }
+
+            for window in (5, 10):
+                recent = history.tail(window)
+
+                row[f"recent_points_for_{window}"] = (
+                    recent["points_for"].mean()
+                    if not recent.empty
+                    else float("nan")
+                )
+
+                row[f"recent_points_against_{window}"] = (
+                    recent["points_against"].mean()
+                    if not recent.empty
+                    else float("nan")
+                )
+
+                row[f"recent_games_used_{window}"] = len(
+                    recent
+                )
+
+            rows.append(row)
+
+    upcoming_form = pd.DataFrame(rows)
+
+    return (
+        pd.concat(
+            [recent_form, upcoming_form],
+            ignore_index=True,
+        )
+        .sort_values(
+            ["match_date", "fixture_id", "team_id"]
+        )
+        .reset_index(drop=True)
+    )
+
+
 def build_strength_multipliers(
     connection: sqlite3.Connection,
     form_window: int = DEFAULT_FORM_WINDOW,
@@ -75,6 +180,11 @@ def build_strength_multipliers(
         raise ValueError("Curve learning rate must be positive.")
 
     recent_form = load_recent_form(connection=connection)
+
+    recent_form = add_upcoming_fixture_rows(
+        connection=connection,
+        recent_form=recent_form,
+    )
 
     recent_form = add_league_average(
         recent_form=recent_form,

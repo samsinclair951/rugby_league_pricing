@@ -144,8 +144,20 @@ def add_recent_form(
 def build_recent_form(
     connection: sqlite3.Connection,
     windows: Sequence[int] = DEFAULT_WINDOWS,
+    source_name: str = RESULTS_SOURCE,
 ) -> pd.DataFrame:
     """Load results and calculate recent-form features."""
-    results = load_results(connection=connection)
-    team_matches = stack_results(results=results)
-    return add_recent_form(team_matches=team_matches, windows=windows)
+
+    results = load_results(
+        connection=connection,
+        source_name=source_name,
+    )
+
+    team_matches = stack_results(
+        results=results,
+    )
+
+    return add_recent_form(
+        team_matches=team_matches,
+        windows=windows,
+    )
