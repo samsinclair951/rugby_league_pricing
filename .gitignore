@@ -15,3 +15,5 @@ __pycache__/
 # Virtual environments
 .venv/
 venv/
+
+data/negative_binomial_backtest.sqlite

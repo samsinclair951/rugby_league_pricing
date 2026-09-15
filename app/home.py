@@ -6,21 +6,38 @@ from pathlib import Path
 
 import streamlit as st
 
+import time 
+
 from dashboard.data import (
     load_fixture,
     load_last_results,
-    load_latest_historical_matrix,
+    load_true_price_bundle,
+    load_true_price_versions,
     load_upcoming_fixtures,
 )
-from dashboard.formatting import fixture_date_heading, short_result_rows, signed_line
-from dashboard.pricing import price_fixture
+from dashboard.formatting import (
+    fixture_date_heading,
+    short_result_rows,
+    signed_line,
+)
 
+from tabs.player_mapping_review import (
+    show_player_mapping_review,
+)
 
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 TEAM_LOGOS_DIR = ASSETS_DIR / "teams"
 STEEDEN_BALL_PATH = ASSETS_DIR / "steeden_ball.png"
 SUPER_LEAGUE_LOGO_PATH = ASSETS_DIR / "super_league_logo.png"
 HERO_IMAGE_PATH = ASSETS_DIR / "hero_players.jpg"
+
+
+def timed(label, func, *args, **kwargs):
+    start = time.perf_counter()
+    result = func(*args, **kwargs)
+    elapsed = time.perf_counter() - start
+    print(f"[TIMING] {label}: {elapsed:.3f}s")
+    return result
 
 
 def _page_icon() -> str:
@@ -49,10 +66,24 @@ def _last_results(team_id: int, before_date):
     return load_last_results(team_id, before_date=before_date, limit=3)
 
 
-@st.cache_resource
-def _historical_matrix():
-    return load_latest_historical_matrix()
+@st.cache_data(ttl=60)
+def _true_price_versions(
+    fixture_id: str,
+):
+    return load_true_price_versions(
+        fixture_id=fixture_id,
+    )
 
+
+@st.cache_data(ttl=60)
+def _true_price_bundle(
+    fixture_id: str,
+    version_type: str,
+):
+    return load_true_price_bundle(
+        fixture_id=fixture_id,
+        version_type=version_type,
+    )
 
 @st.cache_data(show_spinner=False)
 def _image_data_uri(path: str, modified_ns: int) -> str:
@@ -273,7 +304,10 @@ def show_fixture_list() -> None:
     _render_brand_header()
     st.caption("Upcoming fixtures with model expected scores")
 
-    fixtures = _upcoming_fixtures()
+    fixtures = timed(
+        "load upcoming fixtures",
+        _upcoming_fixtures,
+    )
 
     if fixtures.empty:
         st.info("No fixtures with expected scores were found in the next seven days.")
@@ -306,14 +340,47 @@ def show_fixture_detail(fixture_id: str) -> None:
         st.session_state.pop("selected_fixture_id", None)
         st.rerun()
 
-    fixture = _fixture(fixture_id)
+    fixture = timed(
+        "load fixture",
+        _fixture,
+        fixture_id,
+    )
     fixture_date = fixture["match_date"].date()
 
     st.caption(fixture_date_heading(fixture["match_date"]))
     st.title(f"{fixture['home_team']} vs {fixture['away_team']}")
 
-    expected_home = float(fixture["expected_home_score"])
-    expected_away = float(fixture["expected_away_score"])
+    price_versions = timed(
+        "load price versions",
+        _true_price_versions,
+        fixture_id,
+    )
+
+    if not price_versions:
+        st.warning(
+            "No stored true prices are available for this fixture."
+        )
+        return
+
+    selected_version = st.selectbox(
+        "Pricing version",
+        options=price_versions,
+        format_func=lambda value: value.replace("_", " ").title(),
+    )
+
+    prices = timed(
+        "load true prices",
+        _true_price_bundle,
+        fixture_id,
+        selected_version,
+    )
+
+    expected_home = float(
+        prices["expected_home_score"]
+    )
+    expected_away = float(
+        prices["expected_away_score"]
+    )
 
     home_col, away_col = st.columns(2)
     with home_col:
@@ -326,8 +393,18 @@ def show_fixture_detail(fixture_id: str) -> None:
     st.divider()
     st.subheader("Recent results")
 
-    home_results = _last_results(int(fixture["home_team_id"]), fixture_date)
-    away_results = _last_results(int(fixture["away_team_id"]), fixture_date)
+    home_results = timed(
+        "load home last results",
+        _last_results,
+        int(fixture["home_team_id"]),
+        fixture_date,
+    )
+    away_results = timed(
+        "load away last results",
+        _last_results,
+        int(fixture["away_team_id"]),
+        fixture_date,
+    )
 
     home_col, away_col = st.columns(2)
     with home_col:
@@ -345,15 +422,12 @@ def show_fixture_detail(fixture_id: str) -> None:
             width="stretch",
         )
 
-    loader = _start_loader("Spinning the Steeden and building fixture markets...")
-    try:
-        prices = price_fixture(
-            historical_matrix=_historical_matrix(),
-            expected_home_score=expected_home,
-            expected_away_score=expected_away,
-        )
-    finally:
-        loader.empty()
+    prices = timed(
+        "load true prices",
+        _true_price_bundle,
+        fixture_id,
+        version_type="baseline",
+    )
 
     st.divider()
     st.subheader("Match odds")
@@ -420,10 +494,24 @@ def show_fixture_detail(fixture_id: str) -> None:
             width="stretch",
         )
 
+tab_fixtures, tab_player_mappings = st.tabs(
+    [
+        "Fixtures",
+        "Player Mapping Review",
+    ]
+)
 
-selected_fixture_id = st.session_state.get("selected_fixture_id")
+with tab_fixtures:
+    selected_fixture_id = st.session_state.get(
+        "selected_fixture_id"
+    )
 
-if selected_fixture_id:
-    show_fixture_detail(selected_fixture_id)
-else:
-    show_fixture_list()
+    if selected_fixture_id:
+        show_fixture_detail(
+            selected_fixture_id
+        )
+    else:
+        show_fixture_list()
+
+with tab_player_mappings:
+    show_player_mapping_review()

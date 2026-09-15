@@ -35,12 +35,15 @@ def test_upsert_strength_multipliers_round_trip() -> None:
                 scaled_attack_multiplier REAL,
                 scaled_defence_multiplier REAL,
 
+                version_type TEXT NOT NULL DEFAULT 'baseline',
+
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
                 UNIQUE (
                     fixture_id,
-                    team_id
+                    team_id,
+                    version_type
                 )
             )
             """

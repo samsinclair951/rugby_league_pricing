@@ -175,8 +175,14 @@ This is the same pattern described in the feature pipeline and is implemented in
 
 ## Roadmap
 
-- improve matrix calibration and blending
-- add days-since-previous-game and seasonality adjustments
-- expand team-news and player-rating features
-- improve dashboard UX and market filters
-- continue validation against historical results
+- TPF analysis and adjs
+- Days since previous game
+- Weather/Seasonality
+- Market Prices
+- Check again the pricing distributions with updated expected scores
+
+notes:
+- remember to edit the rebuild_expected_team_lineups to take in dates rather than fixture_id or both?
+- remove sqlite backtest from the PR
+- tidy the player blend models and teamsheets adjustments so we can do a newer version of pre-preview-expected-lineup adj
+- allow for 18th man ingest teamsheets

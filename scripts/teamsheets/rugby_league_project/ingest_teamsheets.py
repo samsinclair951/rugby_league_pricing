@@ -22,7 +22,7 @@ SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from scripts.rugby_league_project.teams_mapping import (
+from scripts.mapping.rugby_league_project.teams_mapping import (
     SOURCE_NAME,
     apply_team_ids,
 )

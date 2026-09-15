@@ -40,16 +40,17 @@ STRENGTH_MULTIPLIERS_QUERY = """
         fixture_id,
         team_id,
         match_date,
+        version_type,
         scaled_attack_multiplier,
         scaled_defence_multiplier
     FROM strength_multipliers
-    WHERE
-        scaled_attack_multiplier IS NOT NULL
-        AND scaled_defence_multiplier IS NOT NULL
+    WHERE scaled_attack_multiplier IS NOT NULL
+      AND scaled_defence_multiplier IS NOT NULL
     ORDER BY
-        team_id,
         match_date,
-        fixture_id
+        fixture_id,
+        version_type,
+        team_id
 """
 
 
@@ -73,6 +74,7 @@ RESULTS_QUERY = """
 
 PREDICTION_COLUMNS = [
     "fixture_id",
+    "version_type",
     "prediction_date",
     "home_team_id",
     "away_team_id",
@@ -148,20 +150,22 @@ def load_completed_results(
     return results
 
 
-def latest_team_strength(
+def fixture_team_strength(
     strength: pd.DataFrame,
+    fixture_id: str,
     team_id: int,
-    fixture_date: pd.Timestamp,
+    version_type: str,
 ) -> pd.Series:
-    """Return a team's latest strength before a fixture."""
     available = strength.loc[
-        (strength["team_id"] == team_id) & (strength["match_date"] < fixture_date)
+        (strength["fixture_id"] == fixture_id)
+        & (strength["team_id"] == team_id)
+        & (strength["version_type"] == version_type)
     ]
 
     if available.empty:
         raise ValueError(
-            "No historical strength multiplier found for "
-            f"team_id={team_id} before {fixture_date.date()}."
+            f"No {version_type} multiplier found for "
+            f"fixture={fixture_id}, team_id={team_id}"
         )
 
     return available.iloc[-1]
@@ -226,18 +230,21 @@ def build_expected_score_predictions(
 
     for fixture in fixtures.itertuples(index=False):
         fixture_date = pd.Timestamp(fixture.match_date)
+        fixture_id = str(fixture.fixture_id)
 
-        home_strength = latest_team_strength(
-            strength=strength,
-            team_id=int(fixture.home_team_id),
-            fixture_date=fixture_date,
+        fixture_strength = strength.loc[
+            strength["fixture_id"] == fixture_id
+        ]
+
+        version_counts = (
+            fixture_strength
+            .groupby("version_type")["team_id"]
+            .nunique()
         )
 
-        away_strength = latest_team_strength(
-            strength=strength,
-            team_id=int(fixture.away_team_id),
-            fixture_date=fixture_date,
-        )
+        available_versions = version_counts[
+            version_counts >= 2
+        ].index.tolist()
 
         (
             league_average_points,
@@ -248,45 +255,66 @@ def build_expected_score_predictions(
             fixture_date=fixture_date,
         )
 
-        home_attack_multiplier = float(home_strength["scaled_attack_multiplier"])
+        for version_type in available_versions:
+            home_strength = fixture_team_strength(
+                strength=strength,
+                fixture_id=fixture_id,
+                team_id=int(fixture.home_team_id),
+                version_type=version_type,
+            )
 
-        home_defence_multiplier = float(home_strength["scaled_defence_multiplier"])
+            away_strength = fixture_team_strength(
+                strength=strength,
+                fixture_id=fixture_id,
+                team_id=int(fixture.away_team_id),
+                version_type=version_type,
+            )
 
-        away_attack_multiplier = float(away_strength["scaled_attack_multiplier"])
+            home_attack_multiplier = float(
+                home_strength["scaled_attack_multiplier"]
+            )
+            home_defence_multiplier = float(
+                home_strength["scaled_defence_multiplier"]
+            )
+            away_attack_multiplier = float(
+                away_strength["scaled_attack_multiplier"]
+            )
+            away_defence_multiplier = float(
+                away_strength["scaled_defence_multiplier"]
+            )
 
-        away_defence_multiplier = float(away_strength["scaled_defence_multiplier"])
+            expected_home_score = (
+                league_average_points
+                * home_scoring_factor
+                * home_attack_multiplier
+                * away_defence_multiplier
+            )
 
-        expected_home_score = (
-            league_average_points
-            * home_scoring_factor
-            * home_attack_multiplier
-            * away_defence_multiplier
-        )
+            expected_away_score = (
+                league_average_points
+                * away_scoring_factor
+                * away_attack_multiplier
+                * home_defence_multiplier
+            )
 
-        expected_away_score = (
-            league_average_points
-            * away_scoring_factor
-            * away_attack_multiplier
-            * home_defence_multiplier
-        )
-
-        predictions.append(
-            {
-                "fixture_id": fixture.fixture_id,
-                "prediction_date": datetime.now(UTC).date().isoformat(),
-                "home_team_id": int(fixture.home_team_id),
-                "away_team_id": int(fixture.away_team_id),
-                "league_average_points": league_average_points,
-                "home_scoring_factor": home_scoring_factor,
-                "away_scoring_factor": away_scoring_factor,
-                "home_attack_multiplier": home_attack_multiplier,
-                "home_defence_multiplier": home_defence_multiplier,
-                "away_attack_multiplier": away_attack_multiplier,
-                "away_defence_multiplier": away_defence_multiplier,
-                "expected_home_score": expected_home_score,
-                "expected_away_score": expected_away_score,
-            }
-        )
+            predictions.append(
+                {
+                    "fixture_id": fixture_id,
+                    "version_type": version_type,
+                    "prediction_date": datetime.now(UTC).date().isoformat(),
+                    "home_team_id": int(fixture.home_team_id),
+                    "away_team_id": int(fixture.away_team_id),
+                    "league_average_points": league_average_points,
+                    "home_scoring_factor": home_scoring_factor,
+                    "away_scoring_factor": away_scoring_factor,
+                    "home_attack_multiplier": home_attack_multiplier,
+                    "home_defence_multiplier": home_defence_multiplier,
+                    "away_attack_multiplier": away_attack_multiplier,
+                    "away_defence_multiplier": away_defence_multiplier,
+                    "expected_home_score": expected_home_score,
+                    "expected_away_score": expected_away_score,
+                }
+            )
 
     return pd.DataFrame(
         predictions,
@@ -312,6 +340,7 @@ def upsert_expected_score_predictions(
     sql = """
         INSERT INTO expected_score_predictions (
             fixture_id,
+            version_type,
             prediction_date,
             home_team_id,
             away_team_id,
@@ -327,6 +356,7 @@ def upsert_expected_score_predictions(
         )
         VALUES (
             :fixture_id,
+            :version_type,
             :prediction_date,
             :home_team_id,
             :away_team_id,
@@ -340,7 +370,7 @@ def upsert_expected_score_predictions(
             :expected_home_score,
             :expected_away_score
         )
-        ON CONFLICT (fixture_id)
+        ON CONFLICT (fixture_id, version_type)
         DO UPDATE SET
             prediction_date = excluded.prediction_date,
             home_team_id = excluded.home_team_id,

@@ -83,6 +83,7 @@ def load_upcoming_fixtures(*, days: int = 7) -> pd.DataFrame:
                 ON at.team_id = f.away_team_id
             JOIN {table} AS es
                 ON es.fixture_id = f.fixture_id
+                AND es.version_type = 'baseline'
             WHERE DATE(f.match_date) BETWEEN DATE(?) AND DATE(?)
             ORDER BY
                 DATE(f.match_date),
@@ -125,6 +126,7 @@ def load_fixture(fixture_id: str) -> pd.Series:
                 ON at.team_id = f.away_team_id
             JOIN {table} AS es
                 ON es.fixture_id = f.fixture_id
+                AND es.version_type = 'baseline'
             WHERE f.fixture_id = ?
         """
 
@@ -217,3 +219,145 @@ def load_latest_historical_matrix(*, matrix_version: str = "historical-v1") -> n
 
     buffer = io.BytesIO(row[0])
     return np.load(buffer, allow_pickle=False)
+
+def load_true_prices(
+    fixture_id: str,
+    version_type: str = "baseline",
+) -> pd.DataFrame:
+    """Load stored true prices for one fixture/version."""
+    query = """
+        SELECT
+            fixture_id,
+            version_type,
+            market,
+            selection,
+            line,
+            probability,
+            decimal_price,
+            expected_home_score,
+            expected_away_score,
+            model_version,
+            generated_at
+        FROM true_prices
+        WHERE fixture_id = ?
+          AND version_type = ?
+        ORDER BY market, line, selection
+    """
+
+    with get_connection() as connection:
+        prices = pd.read_sql_query(
+            query,
+            connection,
+            params=(fixture_id, version_type),
+        )
+
+    return prices
+
+
+def load_true_price_bundle(
+    fixture_id: str,
+    version_type: str = "baseline",
+) -> dict[str, pd.DataFrame | float]:
+    """Load stored true prices and reshape them for the dashboard."""
+    prices = load_true_prices(
+        fixture_id=fixture_id,
+        version_type=version_type,
+    )
+
+    if prices.empty:
+        raise ValueError(
+            f"No true prices found for fixture_id={fixture_id!r}, "
+            f"version_type={version_type!r}."
+        )
+
+    match_odds = prices.loc[
+        prices["market"].eq("match_odds")
+    ].copy()
+
+    handicap_rows = prices.loc[
+        prices["market"].eq("handicap")
+    ].copy()
+
+    total_rows = prices.loc[
+        prices["market"].eq("total")
+    ].copy()
+
+    if handicap_rows.empty:
+        raise ValueError("No handicap prices found.")
+
+    if total_rows.empty:
+        raise ValueError("No total prices found.")
+
+    main_handicap = float(
+        handicap_rows["line"].iloc[0]
+    )
+
+    main_total = float(
+        total_rows["line"].iloc[0]
+    )
+
+    handicaps = (
+        handicap_rows
+        .pivot(
+            index="line",
+            columns="selection",
+            values="decimal_price",
+        )
+        .reset_index()
+        .rename(
+            columns={
+                "home": "home_price",
+                "away": "away_price",
+            }
+        )
+    )
+
+    totals = (
+        total_rows
+        .pivot(
+            index="line",
+            columns="selection",
+            values="decimal_price",
+        )
+        .reset_index()
+        .rename(
+            columns={
+                "over": "over_price",
+                "under": "under_price",
+            }
+        )
+    )
+
+    return {
+        "match_odds": match_odds,
+        "handicaps": handicaps,
+        "totals": totals,
+        "main_handicap": main_handicap,
+        "main_total": main_total,
+        "expected_home_score": float(
+            prices["expected_home_score"].iloc[0]
+        ),
+        "expected_away_score": float(
+            prices["expected_away_score"].iloc[0]
+        ),
+    }
+
+
+def load_true_price_versions(
+    fixture_id: str,
+) -> list[str]:
+    """Return stored pricing versions for a fixture."""
+    query = """
+        SELECT DISTINCT version_type
+        FROM true_prices
+        WHERE fixture_id = ?
+        ORDER BY version_type
+    """
+
+    with get_connection() as connection:
+        rows = connection.execute(
+            query,
+            (fixture_id,),
+        ).fetchall()
+
+    return [str(row[0]) for row in rows]

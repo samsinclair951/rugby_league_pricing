@@ -21,8 +21,9 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 
-from rugby_league_project.scraper import scrape_season_matches
-from rugby_league_project.teams_mapping import (
+from scripts.mapping.rugby_league_project.corrections import apply_fixture_date_corrections
+from scripts.mapping.rugby_league_project.scraper import scrape_season_matches
+from scripts.mapping.rugby_league_project.teams_mapping import (
     SOURCE_NAME,
     apply_team_ids,
 )
@@ -149,6 +150,10 @@ def ingest_season(
         connection=connection,
         matches=completed_matches,
         create_missing=True,
+    )
+
+    mapped_matches = apply_fixture_date_corrections(
+        matches=mapped_matches,
     )
 
     results = prepare_results(
