@@ -12,6 +12,38 @@ from rugby_league_pricing.features.team_lineups.upsert import (
 VERSION_TYPE = "pre_preview_expected_line_up"
 
 
+def _normalise_match_date(match_date: str | pd.Timestamp) -> str:
+    return pd.Timestamp(match_date).date().isoformat()
+
+
+def load_fixtures_for_match_date(
+    connection: sqlite3.Connection,
+    match_date: str | pd.Timestamp,
+) -> pd.DataFrame:
+    fixture_date = _normalise_match_date(match_date)
+
+    fixtures = pd.read_sql_query(
+        """
+        SELECT
+            fixture_id,
+            home_team_id,
+            away_team_id,
+            match_date
+        FROM fixtures
+        WHERE DATE(match_date) = ?
+        ORDER BY match_date, fixture_id
+        """,
+        connection,
+        params=(fixture_date,),
+        parse_dates=["match_date"],
+    )
+
+    if fixtures.empty:
+        raise ValueError(f"No fixtures found for match date {fixture_date}")
+
+    return fixtures
+
+
 def build_expected_lineup_from_previous_teamsheet(
     connection: sqlite3.Connection,
     fixture_id: str,
@@ -33,7 +65,9 @@ def build_expected_lineup_from_previous_teamsheet(
 
     previous_fixture = connection.execute(
         """
-        SELECT f.fixture_id
+        SELECT
+            f.fixture_id,
+            COUNT(*) AS lineup_rows
         FROM fixtures f
         JOIN teamsheets ts
             ON ts.fixture_id = f.fixture_id
@@ -44,7 +78,13 @@ def build_expected_lineup_from_previous_teamsheet(
         )
           AND f.match_date < ?
         GROUP BY f.fixture_id, f.match_date
-        ORDER BY f.match_date DESC
+        ORDER BY
+            CASE
+                WHEN COUNT(*) >= 17 THEN 1
+                ELSE 0
+            END DESC,
+            COUNT(*) DESC,
+            f.match_date DESC
         LIMIT 1
         """,
         (
@@ -61,6 +101,7 @@ def build_expected_lineup_from_previous_teamsheet(
         )
 
     previous_fixture_id = str(previous_fixture[0])
+    previous_lineup_rows = int(previous_fixture[1])
 
     lineup = pd.read_sql_query(
         """
@@ -89,7 +130,10 @@ def build_expected_lineup_from_previous_teamsheet(
         params=[
             fixture_id,
             VERSION_TYPE,
-            f"Copied from previous teamsheet {previous_fixture_id}",
+            (
+                "Copied from previous teamsheet "
+                f"{previous_fixture_id} ({previous_lineup_rows} rows)"
+            ),
             fixture_id,
             previous_fixture_id,
             team_id,
@@ -133,6 +177,28 @@ def build_expected_lineups_for_fixture(
     return pd.concat(frames, ignore_index=True)
 
 
+def build_expected_lineups_for_match_date(
+    connection: sqlite3.Connection,
+    match_date: str | pd.Timestamp,
+) -> pd.DataFrame:
+    fixtures = load_fixtures_for_match_date(
+        connection=connection,
+        match_date=match_date,
+    )
+
+    frames: list[pd.DataFrame] = []
+
+    for fixture in fixtures.itertuples(index=False):
+        frames.append(
+            build_expected_lineups_for_fixture(
+                connection=connection,
+                fixture_id=str(fixture.fixture_id),
+            )
+        )
+
+    return pd.concat(frames, ignore_index=True)
+
+
 def save_expected_lineups_for_fixture(
     connection: sqlite3.Connection,
     fixture_id: str,
@@ -158,3 +224,42 @@ def save_expected_lineups_for_fixture(
         connection=connection,
         lineups=lineups,
     )
+
+
+def save_expected_lineups_for_match_date(
+    connection: sqlite3.Connection,
+    match_date: str | pd.Timestamp,
+) -> int:
+    fixtures = load_fixtures_for_match_date(
+        connection=connection,
+        match_date=match_date,
+    )
+
+    total_rows = 0
+
+    for fixture in fixtures.itertuples(index=False):
+        fixture_id = str(fixture.fixture_id)
+
+        lineups = build_expected_lineups_for_fixture(
+            connection=connection,
+            fixture_id=fixture_id,
+        )
+
+        connection.execute(
+            """
+            DELETE FROM expected_team_lineups
+            WHERE fixture_id = ?
+              AND version_type = ?
+            """,
+            (
+                fixture_id,
+                VERSION_TYPE,
+            ),
+        )
+
+        total_rows += upsert_expected_team_lineups(
+            connection=connection,
+            lineups=lineups,
+        )
+
+    return total_rows

@@ -10,7 +10,6 @@ import pandas as pd
 from src.rugby_league_pricing.database.connection import get_connection
 from src.rugby_league_pricing.utils.sql import upsert_dataframe
 
-
 LOGGER = logging.getLogger(__name__)
 
 SOURCE_NAME = "patreon"
@@ -358,7 +357,7 @@ def build_teamsheet_rows(
         group = (
             group
             .sort_values("source_lineup_order")
-            .head(17)
+            .head(18)
             .copy()
         )
 
@@ -659,7 +658,7 @@ def ingest_season(
         )
 
     bad = teamsheets.loc[
-        ~teamsheets["lineup_order"].between(1, 17)
+        ~teamsheets["lineup_order"].between(1, 18)
     ]
 
     if not bad.empty:

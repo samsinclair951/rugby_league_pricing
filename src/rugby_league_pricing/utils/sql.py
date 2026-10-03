@@ -6,6 +6,10 @@ import numpy as np
 import pandas as pd
 
 
+def _quote_identifier(identifier: str) -> str:
+    return '"' + identifier.replace('"', '""') + '"'
+
+
 def prepare_database_rows(
     dataframe: pd.DataFrame,
     columns: list[str],
@@ -54,9 +58,15 @@ def upsert_dataframe(
         columns=columns,
     )
 
-    insert_columns = ", ".join(columns)
+    insert_columns = ", ".join(
+        _quote_identifier(column)
+        for column in columns
+    )
     placeholders = ", ".join("?" for _ in columns)
-    conflict_clause = ", ".join(conflict_columns)
+    conflict_clause = ", ".join(
+        _quote_identifier(column)
+        for column in conflict_columns
+    )
 
     if update_columns is None:
         update_columns = [
@@ -73,7 +83,10 @@ def upsert_dataframe(
             f"{invalid_update_columns}"
         )
 
-    update_assignments = [f"{column} = excluded.{column}" for column in update_columns]
+    update_assignments = [
+        f"{_quote_identifier(column)} = excluded.{_quote_identifier(column)}"
+        for column in update_columns
+    ]
 
     if update_timestamp:
         update_assignments.append("updated_at = CURRENT_TIMESTAMP")
@@ -81,7 +94,7 @@ def upsert_dataframe(
     update_clause = ", ".join(update_assignments)
 
     query = f"""
-        INSERT INTO {table_name} ({insert_columns})
+        INSERT INTO {_quote_identifier(table_name)} ({insert_columns})
         VALUES ({placeholders})
         ON CONFLICT ({conflict_clause})
         DO UPDATE SET

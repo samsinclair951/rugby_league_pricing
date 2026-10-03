@@ -133,6 +133,30 @@ def initialise_database() -> None:
                     source_fixture_id
                 )
             );
+
+            CREATE TABLE IF NOT EXISTS fixture_rounds (
+                fixture_id TEXT PRIMARY KEY,
+                season INTEGER NOT NULL,
+                tournament_id INTEGER NOT NULL,
+                round_number INTEGER NOT NULL,
+                round_start_date TEXT NOT NULL,
+                round_end_date TEXT NOT NULL,
+                round_source TEXT NOT NULL,
+                has_replay_team INTEGER NOT NULL DEFAULT 0
+                    CHECK (has_replay_team IN (0, 1)),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (fixture_id)
+                    REFERENCES fixtures(fixture_id),
+
+                UNIQUE (
+                    season,
+                    tournament_id,
+                    round_number,
+                    fixture_id
+                )
+            );
             
             CREATE TABLE IF NOT EXISTS results (
                 result_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -246,7 +270,7 @@ def initialise_database() -> None:
                     CHECK (side IN ('home', 'away')),
                 position TEXT,
                 lineup_order INTEGER NOT NULL
-                    CHECK (lineup_order BETWEEN 1 AND 17),
+                    CHECK (lineup_order BETWEEN 1 AND 18),
                 is_starting INTEGER NOT NULL
                     CHECK (is_starting IN (0, 1)),
                 source_name TEXT NOT NULL,
@@ -688,6 +712,16 @@ def initialise_database() -> None:
 
             CREATE INDEX IF NOT EXISTS idx_fixtures_stage
                 ON fixtures(competition_stage_id);
+
+            CREATE INDEX IF NOT EXISTS idx_fixture_rounds_lookup
+                ON fixture_rounds(
+                    season,
+                    tournament_id,
+                    round_number
+                );
+
+            CREATE INDEX IF NOT EXISTS idx_fixture_rounds_fixture
+                ON fixture_rounds(fixture_id);
 
             CREATE INDEX IF NOT EXISTS idx_results_match_date
                 ON results(match_date);

@@ -341,8 +341,22 @@ def main() -> None:
             f"Database not found: {DATABASE_PATH}"
         )
 
+    # Supplying a start/end range implies a weekly rebuild.
+    weekly_rebuild = (
+        args.weekly
+        or args.start_date is not None
+        or args.end_date is not None
+    )
+
+    # Avoid ambiguous usage.
+    if args.through_date and weekly_rebuild:
+        parser.error(
+            "--through-date cannot be combined with "
+            "--weekly, --start-date or --end-date."
+        )
+
     with sqlite3.connect(DATABASE_PATH) as connection:
-        if args.weekly:
+        if weekly_rebuild:
             rebuild_weekly_models(
                 connection,
                 start_date=(
@@ -357,15 +371,12 @@ def main() -> None:
                 ),
                 ridge_alpha=args.ridge_alpha,
             )
-
             return
 
         through_date = (
             pd.Timestamp(args.through_date)
             if args.through_date
-            else latest_completed_fixture_date(
-                connection
-            )
+            else latest_completed_fixture_date(connection)
         )
 
         train_and_store_snapshot(
