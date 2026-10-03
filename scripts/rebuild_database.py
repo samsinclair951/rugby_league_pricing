@@ -191,6 +191,11 @@ def main() -> None:
 
     run_module(
         "scripts.features."
+        "rebuild_player_ratings"
+    )
+
+    run_module(
+        "scripts.features."
         "rebuild_expected_scores"
     )
 

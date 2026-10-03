@@ -848,23 +848,23 @@ def scrape_match_teamsheet(
             f"({len(away_records)}): {summary_url}"
         )
 
-    if len(home_records) > 17:
+    if len(home_records) > 18:
         LOGGER.warning(
             "Home teamsheet has %s players; "
-            "keeping first 17: %s",
+            "keeping first 18: %s",
             len(home_records),
             summary_url,
         )
-        home_records = home_records[:17]
+        home_records = home_records[:18]
 
-    if len(away_records) > 17:
+    if len(away_records) > 18:
         LOGGER.warning(
             "Away teamsheet has %s players; "
-            "keeping first 17: %s",
+            "keeping first 18: %s",
             len(away_records),
             summary_url,
         )
-        away_records = away_records[:17]
+        away_records = away_records[:18]
 
     LOGGER.debug(
         "Teamsheet %s: home=%s away=%s",

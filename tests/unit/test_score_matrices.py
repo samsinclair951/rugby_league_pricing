@@ -112,7 +112,7 @@ def test_blend_sums_to_one(
     )
 
     blended = blend_score_matrices(
-        poisson_matrix=poisson_matrix,
+        theoretical_matrix=poisson_matrix,
         historical_matrix=historical_matrix,
         historical_weight=0.20,
     )
@@ -134,7 +134,7 @@ def test_zero_historical_weight_returns_poisson_matrix(
     )
 
     blended = blend_score_matrices(
-        poisson_matrix=poisson_matrix,
+        theoretical_matrix=poisson_matrix,
         historical_matrix=historical_matrix,
         historical_weight=0.0,
     )
@@ -173,16 +173,19 @@ def test_invalid_historical_weight_raises(
     historical_weight: float,
     expected_message: str,
 ) -> None:
-    poisson_matrix = build_poisson_score_matrix(30.0, 16.0)
+    poisson_matrix = build_poisson_score_matrix(
+        expected_home_score=30.0,
+        expected_away_score=16.0,
+    )
     historical_matrix = build_shifted_historical_score_matrix(
-        historical_results,
-        30.0,
-        16.0,
+        historical_results=historical_results,
+        expected_home_score=30.0,
+        expected_away_score=16.0,
     )
 
     with pytest.raises(ValueError, match=expected_message):
         blend_score_matrices(
-            poisson_matrix,
-            historical_matrix,
+            theoretical_matrix=poisson_matrix,
+            historical_matrix=historical_matrix,
             historical_weight=historical_weight,
         )

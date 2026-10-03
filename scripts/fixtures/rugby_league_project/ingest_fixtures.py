@@ -20,8 +20,9 @@ SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from rugby_league_project.scraper import scrape_season_matches
-from rugby_league_project.teams_mapping import (
+from scripts.mapping.rugby_league_project.corrections import apply_fixture_date_corrections
+from scripts.mapping.rugby_league_project.scraper import scrape_season_matches
+from scripts.mapping.rugby_league_project.teams_mapping import (
     SOURCE_NAME,
     apply_team_ids,
 )
@@ -440,6 +441,11 @@ def ingest_season(
         matches=matches,
         create_missing=True,
     )
+
+    # Apply verified RLP date corrections BEFORE fixture_id is constructed.
+    mapped_matches = apply_fixture_date_corrections(
+        matches=mapped_matches,
+        )
 
     mapped_matches = add_competition_metadata(
         connection=connection,

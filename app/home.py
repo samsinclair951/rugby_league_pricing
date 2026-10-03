@@ -1,26 +1,55 @@
 from __future__ import annotations
 
 import base64
+import logging
 import re
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
+import time 
+
 from dashboard.data import (
+    EDITABLE_VERSION_TYPES,
     load_fixture,
     load_last_results,
-    load_latest_historical_matrix,
+    load_lineup_editor_data,
+    save_lineup_and_reprice_fixture,
+    load_true_price_bundle,
+    load_true_price_versions,
     load_upcoming_fixtures,
 )
-from dashboard.formatting import fixture_date_heading, short_result_rows, signed_line
-from dashboard.pricing import price_fixture
+from dashboard.formatting import (
+    fixture_date_heading,
+    short_result_rows,
+    signed_line,
+)
 
+from tabs.player_mapping_review import (
+    show_player_mapping_review,
+)
 
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 TEAM_LOGOS_DIR = ASSETS_DIR / "teams"
 STEEDEN_BALL_PATH = ASSETS_DIR / "steeden_ball.png"
 SUPER_LEAGUE_LOGO_PATH = ASSETS_DIR / "super_league_logo.png"
 HERO_IMAGE_PATH = ASSETS_DIR / "hero_players.jpg"
+
+LOGGER = logging.getLogger(__name__)
+
+
+def _lineup_ui_log(message: str) -> None:
+    LOGGER.info(message)
+    print(message)
+
+
+def timed(label, func, *args, **kwargs):
+    start = time.perf_counter()
+    result = func(*args, **kwargs)
+    elapsed = time.perf_counter() - start
+    print(f"[TIMING] {label}: {elapsed:.3f}s")
+    return result
 
 
 def _page_icon() -> str:
@@ -34,25 +63,59 @@ st.set_page_config(
 )
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=300)
 def _upcoming_fixtures():
     return load_upcoming_fixtures(days=7)
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=300)
 def _fixture(fixture_id: str):
     return load_fixture(fixture_id)
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=300)
 def _last_results(team_id: int, before_date):
     return load_last_results(team_id, before_date=before_date, limit=3)
 
 
-@st.cache_resource
-def _historical_matrix():
-    return load_latest_historical_matrix()
+@st.cache_data(ttl=300)
+def _true_price_versions(
+    fixture_id: str,
+):
+    return load_true_price_versions(
+        fixture_id=fixture_id,
+    )
 
+
+@st.cache_data(ttl=300)
+def _true_price_bundle(
+    fixture_id: str,
+    version_type: str,
+):
+    return load_true_price_bundle(
+        fixture_id=fixture_id,
+        version_type=version_type,
+    )
+
+
+@st.cache_data(ttl=300)
+def _lineup_editor_bundle(
+    fixture_id: str,
+    version_type: str,
+):
+    return load_lineup_editor_data(
+        fixture_id=fixture_id,
+        version_type=version_type,
+    )
+
+
+def _clear_fixture_caches() -> None:
+    _upcoming_fixtures.clear()
+    _fixture.clear()
+    _last_results.clear()
+    _true_price_versions.clear()
+    _true_price_bundle.clear()
+    _lineup_editor_bundle.clear()
 
 @st.cache_data(show_spinner=False)
 def _image_data_uri(path: str, modified_ns: int) -> str:
@@ -75,6 +138,130 @@ def _asset_data_uri(path: Path) -> str | None:
     if not path.exists() or not path.is_file():
         return None
     return _image_data_uri(str(path), path.stat().st_mtime_ns)
+
+
+def _build_edited_lineup_rows(
+    *,
+    fixture_id: str,
+    version_type: str,
+    team_id: int,
+    team_name: str,
+    lineup: pd.DataFrame,
+    player_pool: pd.DataFrame,
+) -> pd.DataFrame:
+    team_lineup = lineup.loc[
+        lineup["team_id"] == team_id
+    ].copy()
+
+    if team_lineup.empty:
+        st.warning(
+            f"No lineup rows found for {team_name} in {version_type}."
+        )
+        return pd.DataFrame(
+            columns=[
+                "team_id",
+                "player_id",
+                "player_name",
+                "position_id",
+            ]
+        )
+
+    team_lineup["player_id"] = team_lineup["player_id"].astype(str)
+    team_lineup = team_lineup.sort_values("position_id")
+
+    pool = player_pool.loc[
+        player_pool["team_id"] == team_id
+    ].copy()
+    pool["player_id"] = pool["player_id"].astype(str)
+
+    id_to_name = {
+        str(row.player_id): str(row.player_name)
+        for row in pool.itertuples(index=False)
+    }
+
+    id_to_apps = {
+        str(row.player_id): int(row.appearances)
+        for row in pool.itertuples(index=False)
+    }
+
+    options = pool["player_id"].tolist()
+
+    missing_current_ids = [
+        pid
+        for pid in team_lineup["player_id"].tolist()
+        if pid not in options
+    ]
+    options = [*missing_current_ids, *options]
+
+    st.markdown(f"**{team_name} lineup**")
+
+    edited_rows: list[dict[str, object]] = []
+
+    for row_number, row in enumerate(
+        team_lineup.itertuples(index=False),
+        start=1,
+    ):
+        current_id = str(row.player_id)
+
+        if current_id not in id_to_name:
+            id_to_name[current_id] = str(row.player_name)
+            id_to_apps[current_id] = 0
+
+        try:
+            selected_index = options.index(current_id)
+        except ValueError:
+            selected_index = 0
+
+        selected_player_id = st.selectbox(
+            f"{team_name} · Position {int(row.position_id)}",
+            options=options,
+            index=selected_index,
+            key=(
+                f"lineup-editor-{fixture_id}-{version_type}-"
+                f"{team_id}-{int(row.position_id)}-{row_number}"
+            ),
+            format_func=lambda value: (
+                f"{id_to_name.get(value, value)}"
+                f" (apps: {id_to_apps.get(value, 0)})"
+            ),
+        )
+
+        edited_rows.append(
+            {
+                "team_id": int(team_id),
+                "player_id": str(selected_player_id),
+                "player_name": str(
+                    id_to_name.get(selected_player_id, selected_player_id)
+                ),
+                "position_id": int(row.position_id),
+            }
+        )
+
+    selected_ids = {
+        str(player_id)
+        for player_id in pd.Series(
+            [row["player_id"] for row in edited_rows]
+        )
+    }
+
+    others = pool.loc[
+        ~pool["player_id"].isin(selected_ids)
+    ][["player_name", "appearances"]].copy()
+
+    if not others.empty:
+        st.caption("Other players used this season")
+        st.dataframe(
+            others.rename(
+                columns={
+                    "player_name": "Player",
+                    "appearances": "Appearances",
+                }
+            ),
+            hide_index=True,
+            width="stretch",
+        )
+
+    return pd.DataFrame(edited_rows)
 
 
 def _team_logo_path(team_name: str) -> Path | None:
@@ -273,7 +460,10 @@ def show_fixture_list() -> None:
     _render_brand_header()
     st.caption("Upcoming fixtures with model expected scores")
 
-    fixtures = _upcoming_fixtures()
+    fixtures = timed(
+        "load upcoming fixtures",
+        _upcoming_fixtures,
+    )
 
     if fixtures.empty:
         st.info("No fixtures with expected scores were found in the next seven days.")
@@ -306,14 +496,47 @@ def show_fixture_detail(fixture_id: str) -> None:
         st.session_state.pop("selected_fixture_id", None)
         st.rerun()
 
-    fixture = _fixture(fixture_id)
+    fixture = timed(
+        "load fixture",
+        _fixture,
+        fixture_id,
+    )
     fixture_date = fixture["match_date"].date()
 
     st.caption(fixture_date_heading(fixture["match_date"]))
     st.title(f"{fixture['home_team']} vs {fixture['away_team']}")
 
-    expected_home = float(fixture["expected_home_score"])
-    expected_away = float(fixture["expected_away_score"])
+    price_versions = timed(
+        "load price versions",
+        _true_price_versions,
+        fixture_id,
+    )
+
+    if not price_versions:
+        st.warning(
+            "No stored true prices are available for this fixture."
+        )
+        return
+
+    selected_version = st.selectbox(
+        "Pricing version",
+        options=price_versions,
+        format_func=lambda value: value.replace("_", " ").title(),
+    )
+
+    prices = timed(
+        "load true prices",
+        _true_price_bundle,
+        fixture_id,
+        selected_version,
+    )
+
+    expected_home = float(
+        prices["expected_home_score"]
+    )
+    expected_away = float(
+        prices["expected_away_score"]
+    )
 
     home_col, away_col = st.columns(2)
     with home_col:
@@ -326,8 +549,18 @@ def show_fixture_detail(fixture_id: str) -> None:
     st.divider()
     st.subheader("Recent results")
 
-    home_results = _last_results(int(fixture["home_team_id"]), fixture_date)
-    away_results = _last_results(int(fixture["away_team_id"]), fixture_date)
+    home_results = timed(
+        "load home last results",
+        _last_results,
+        int(fixture["home_team_id"]),
+        fixture_date,
+    )
+    away_results = timed(
+        "load away last results",
+        _last_results,
+        int(fixture["away_team_id"]),
+        fixture_date,
+    )
 
     home_col, away_col = st.columns(2)
     with home_col:
@@ -344,16 +577,6 @@ def show_fixture_detail(fixture_id: str) -> None:
             hide_index=True,
             width="stretch",
         )
-
-    loader = _start_loader("Spinning the Steeden and building fixture markets...")
-    try:
-        prices = price_fixture(
-            historical_matrix=_historical_matrix(),
-            expected_home_score=expected_home,
-            expected_away_score=expected_away,
-        )
-    finally:
-        loader.empty()
 
     st.divider()
     st.subheader("Match odds")
@@ -420,10 +643,157 @@ def show_fixture_detail(fixture_id: str) -> None:
             width="stretch",
         )
 
+    st.divider()
+    st.subheader("Lineup editor and repricing")
 
-selected_fixture_id = st.session_state.get("selected_fixture_id")
+    enable_editor = st.toggle(
+        "Enable lineup editor",
+        value=False,
+        key=f"lineup-editor-enabled-{fixture_id}",
+        help=(
+            "Turn this on to load editable lineup controls. "
+            "Leaving it off keeps fixture detail loads faster."
+        ),
+    )
 
-if selected_fixture_id:
-    show_fixture_detail(selected_fixture_id)
-else:
-    show_fixture_list()
+    if not enable_editor:
+        st.caption(
+            "Lineup editor is disabled for faster page loads. "
+            "Toggle on when you want to edit and reprice."
+        )
+        return
+
+    _lineup_ui_log(
+        "[lineup-editor-ui] enabled "
+        f"fixture_id={fixture_id}"
+    )
+
+    editable_version = st.selectbox(
+        "Editable lineup version",
+        options=EDITABLE_VERSION_TYPES,
+        format_func=lambda value: value.replace("_", " ").title(),
+        key=f"editable-version-{fixture_id}",
+    )
+
+    editor_data = timed(
+        "load lineup editor data",
+        _lineup_editor_bundle,
+        fixture_id,
+        editable_version,
+    )
+
+    lineup = editor_data["lineup"]
+    player_pool = editor_data["players"]
+
+    if lineup.empty:
+        st.warning(
+            "No expected lineup rows available for this fixture/version."
+        )
+        return
+
+    save_to_preview = False
+    with st.form(key=f"lineup-form-{fixture_id}-{editable_version}"):
+        home_col, away_col = st.columns(2)
+
+        with home_col:
+            home_rows = _build_edited_lineup_rows(
+                fixture_id=fixture_id,
+                version_type=editable_version,
+                team_id=int(editor_data["home_team_id"]),
+                team_name=str(fixture["home_team"]),
+                lineup=lineup,
+                player_pool=player_pool,
+            )
+
+        with away_col:
+            away_rows = _build_edited_lineup_rows(
+                fixture_id=fixture_id,
+                version_type=editable_version,
+                team_id=int(editor_data["away_team_id"]),
+                team_name=str(fixture["away_team"]),
+                lineup=lineup,
+                player_pool=player_pool,
+            )
+
+        if editable_version == "pre_preview_expected_line_up":
+            save_to_preview = st.checkbox(
+                "Also save this lineup as preview expected lineup",
+                value=False,
+            )
+
+        submitted = st.form_submit_button(
+            "Save lineup and reprice fixture",
+            type="primary",
+        )
+
+    if submitted:
+        edited_lineup = pd.concat(
+            [home_rows, away_rows],
+            ignore_index=True,
+        )
+
+        _lineup_ui_log(
+            "[lineup-editor-ui] submit "
+            f"fixture_id={fixture_id} "
+            f"version_type={editable_version} "
+            f"rows={len(edited_lineup)} "
+            f"save_to_preview={save_to_preview}"
+        )
+
+        with st.spinner("Saving lineup and repricing..."):
+            result = save_lineup_and_reprice_fixture(
+                fixture_id=fixture_id,
+                version_type=editable_version,
+                lineup_rows=edited_lineup,
+            )
+
+            if save_to_preview:
+                preview_result = save_lineup_and_reprice_fixture(
+                    fixture_id=fixture_id,
+                    version_type="preview_expected_line_up",
+                    lineup_rows=edited_lineup,
+                )
+
+        _clear_fixture_caches()
+
+        st.success(
+            (
+                "Saved and repriced "
+                f"{result['version_type']} | "
+                f"Expected score {result['expected_home_score']:.1f} - "
+                f"{result['expected_away_score']:.1f}"
+            )
+        )
+
+        if save_to_preview:
+            st.success(
+                (
+                    "Saved and repriced preview expected lineup | "
+                    f"Expected score {preview_result['expected_home_score']:.1f} - "
+                    f"{preview_result['expected_away_score']:.1f}"
+                )
+            )
+
+        st.rerun()
+
+tab_fixtures, tab_player_mappings = st.tabs(
+    [
+        "Fixtures",
+        "Player Mapping Review",
+    ]
+)
+
+with tab_fixtures:
+    selected_fixture_id = st.session_state.get(
+        "selected_fixture_id"
+    )
+
+    if selected_fixture_id:
+        show_fixture_detail(
+            selected_fixture_id
+        )
+    else:
+        show_fixture_list()
+
+with tab_player_mappings:
+    show_player_mapping_review()
