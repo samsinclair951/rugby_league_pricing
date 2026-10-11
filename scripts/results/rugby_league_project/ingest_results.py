@@ -9,6 +9,7 @@ from typing import Any
 
 import pandas as pd
 
+
 PROJECT_ROOT = next(
     parent
     for parent in Path(__file__).resolve().parents
@@ -21,8 +22,13 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 
-from scripts.mapping.rugby_league_project.corrections import apply_fixture_date_corrections
-from scripts.mapping.rugby_league_project.scraper import scrape_season_matches
+from scripts.mapping.rugby_league_project.corrections import (
+    apply_fixture_date_corrections,
+)
+from scripts.mapping.rugby_league_project.scraper import (
+    get_competition_config,
+    scrape_season_matches,
+)
 from scripts.mapping.rugby_league_project.teams_mapping import (
     SOURCE_NAME,
     apply_team_ids,
@@ -31,8 +37,13 @@ from scripts.mapping.rugby_league_project.teams_mapping import (
 from rugby_league_pricing.database.connection import (
     get_connection,
 )
-from rugby_league_pricing.utils.fixtures import build_fixture_id
-from rugby_league_pricing.utils.sql import upsert_dataframe
+from rugby_league_pricing.utils.fixtures import (
+    build_fixture_id,
+)
+from rugby_league_pricing.utils.sql import (
+    upsert_dataframe,
+)
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,22 +51,23 @@ LOGGER = logging.getLogger(__name__)
 def filter_completed_results(
     matches: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """
-    Keep only matches with both a home and away score.
-    """
+    """Keep only matches with both a home and away score."""
+
     return [
         match
         for match in matches
-        if (match["home_score"] is not None and match["away_score"] is not None)
+        if (
+            match["home_score"] is not None
+            and match["away_score"] is not None
+        )
     ]
 
 
 def prepare_results(
     mapped_matches: list[dict[str, Any]],
 ) -> pd.DataFrame:
-    """
-    Select only the fields stored in the results table.
-    """
+    """Select only the fields stored in the results table."""
+
     records = [
         {
             "fixture_id": build_fixture_id(
@@ -79,7 +91,9 @@ def prepare_results(
         for match in mapped_matches
     ]
 
-    return pd.DataFrame.from_records(records)
+    return pd.DataFrame.from_records(
+        records
+    )
 
 
 def upsert_results(
@@ -87,6 +101,10 @@ def upsert_results(
     results: pd.DataFrame,
 ) -> int:
     """Insert or update completed results in SQLite."""
+
+    if results.empty:
+        return 0
+
     columns = [
         "fixture_id",
         "season",
@@ -108,7 +126,9 @@ def upsert_results(
         dataframe=results,
         table_name="results",
         columns=columns,
-        conflict_columns=["fixture_id"],
+        conflict_columns=[
+            "fixture_id"
+        ],
         update_columns=[
             "kick_off",
             "home_score",
@@ -116,6 +136,7 @@ def upsert_results(
             "referee",
             "venue",
             "attendance",
+            "source_name",
             "source_match_id",
         ],
         update_timestamp=True,
@@ -125,15 +146,26 @@ def upsert_results(
 def ingest_season(
     connection: sqlite3.Connection,
     season: int,
+    competition: str,
 ) -> int:
+    config = get_competition_config(
+        competition
+    )
+
+    tournament_name = (
+        config["tournament_name"]
+    )
+
     all_matches = scrape_season_matches(
         season=season,
+        competition=competition,
     )
 
     LOGGER.info(
-        "Season %s: scraped %s total matches",
+        "Season %s: scraped %s total %s matches",
         season,
         len(all_matches),
+        tournament_name,
     )
 
     completed_matches = filter_completed_results(
@@ -141,10 +173,14 @@ def ingest_season(
     )
 
     LOGGER.info(
-        "Season %s: found %s completed league results",
+        "Season %s: found %s completed %s results",
         season,
         len(completed_matches),
+        tournament_name,
     )
+
+    if not completed_matches:
+        return 0
 
     mapped_matches = apply_team_ids(
         connection=connection,
@@ -152,6 +188,8 @@ def ingest_season(
         create_missing=True,
     )
 
+    # Apply verified RLP date corrections BEFORE
+    # fixture_id is constructed.
     mapped_matches = apply_fixture_date_corrections(
         matches=mapped_matches,
     )
@@ -166,9 +204,10 @@ def ingest_season(
     )
 
     LOGGER.info(
-        "Season %s: inserted or updated %s results",
+        "Season %s: inserted or updated %s %s results",
         season,
         result_count,
+        tournament_name,
     )
 
     return result_count
@@ -179,6 +218,7 @@ def validate_database(
 ) -> None:
     required_tables = {
         "results",
+        "fixtures",
         "teams",
         "team_source_mappings",
     }
@@ -191,20 +231,27 @@ def validate_database(
         """
     ).fetchall()
 
-    existing_tables = {str(row[0]) for row in rows}
+    existing_tables = {
+        str(row[0])
+        for row in rows
+    }
 
-    missing_tables = required_tables - existing_tables
+    missing_tables = (
+        required_tables
+        - existing_tables
+    )
 
     if missing_tables:
         raise RuntimeError(
-            f"Database is missing required tables: {sorted(missing_tables)}"
+            "Database is missing required tables: "
+            f"{sorted(missing_tables)}"
         )
 
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Ingest completed Super League results "
+            "Ingest completed rugby league results "
             "from Rugby League Project into SQLite."
         )
     )
@@ -213,7 +260,7 @@ def parse_arguments() -> argparse.Namespace:
         "--start-season",
         type=int,
         required=True,
-        help="First season to ingest, for example 2022.",
+        help="First season to ingest, for example 2024.",
     )
 
     parser.add_argument(
@@ -223,6 +270,19 @@ def parse_arguments() -> argparse.Namespace:
         help="Final season to ingest, for example 2026.",
     )
 
+    parser.add_argument(
+        "--competition",
+        choices=[
+            "super_league",
+            "nrl",
+        ],
+        default="super_league",
+        help=(
+            "Competition to ingest. "
+            "Defaults to super_league."
+        ),
+    )
+
     return parser.parse_args()
 
 
@@ -230,12 +290,24 @@ def main() -> None:
     args = parse_arguments()
 
     if args.start_season > args.end_season:
-        raise ValueError("--start-season cannot be later than --end-season")
+        raise ValueError(
+            "--start-season cannot be later than --end-season"
+        )
+
+    config = get_competition_config(
+        args.competition
+    )
+
+    tournament_name = (
+        config["tournament_name"]
+    )
 
     total_ingested = 0
 
     with get_connection() as connection:
-        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute(
+            "PRAGMA foreign_keys = ON"
+        )
 
         validate_database(
             connection=connection,
@@ -249,6 +321,7 @@ def main() -> None:
                 total_ingested += ingest_season(
                     connection=connection,
                     season=season,
+                    competition=args.competition,
                 )
 
             connection.commit()
@@ -258,8 +331,9 @@ def main() -> None:
             raise
 
     LOGGER.info(
-        "Finished. Inserted or updated %s results from %s.",
+        "Finished. Inserted or updated %s %s results from %s.",
         total_ingested,
+        tournament_name,
         SOURCE_NAME,
     )
 

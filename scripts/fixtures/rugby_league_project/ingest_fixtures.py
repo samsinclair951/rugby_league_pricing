@@ -9,6 +9,7 @@ from typing import Any
 
 import pandas as pd
 
+
 PROJECT_ROOT = next(
     parent
     for parent in Path(__file__).resolve().parents
@@ -20,8 +21,14 @@ SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from scripts.mapping.rugby_league_project.corrections import apply_fixture_date_corrections
-from scripts.mapping.rugby_league_project.scraper import scrape_season_matches
+
+from scripts.mapping.rugby_league_project.corrections import (
+    apply_fixture_date_corrections,
+)
+from scripts.mapping.rugby_league_project.scraper import (
+    get_competition_config,
+    scrape_season_matches,
+)
 from scripts.mapping.rugby_league_project.teams_mapping import (
     SOURCE_NAME,
     apply_team_ids,
@@ -30,25 +37,30 @@ from scripts.mapping.rugby_league_project.teams_mapping import (
 from rugby_league_pricing.database.connection import (
     get_connection,
 )
-from rugby_league_pricing.utils.fixtures import build_fixture_id
-from rugby_league_pricing.utils.sql import upsert_dataframe
+from rugby_league_pricing.utils.fixtures import (
+    build_fixture_id,
+)
+from rugby_league_pricing.utils.sql import (
+    upsert_dataframe,
+)
+
 
 LOGGER = logging.getLogger(__name__)
 
-TOURNAMENT_NAME = "Super League"
-TOURNAMENT_COUNTRY = "England"
 TOURNAMENT_TYPE = "league"
 
 
 def get_or_create_tournament(
     connection: sqlite3.Connection,
     tournament_name: str,
+    tournament_country: str,
 ) -> int:
     """
     Return the canonical tournament ID.
 
     Creates the tournament if it does not already exist.
     """
+
     row = connection.execute(
         """
         SELECT tournament_id
@@ -58,7 +70,7 @@ def get_or_create_tournament(
         """,
         (
             tournament_name,
-            TOURNAMENT_COUNTRY,
+            tournament_country,
         ),
     ).fetchone()
 
@@ -93,7 +105,7 @@ def get_or_create_tournament(
         """,
         (
             tournament_name,
-            TOURNAMENT_COUNTRY,
+            tournament_country,
             TOURNAMENT_TYPE,
         ),
     )
@@ -105,7 +117,7 @@ def get_or_create_tournament(
     LOGGER.info(
         "Created tournament: %s (%s) -> tournament_id %s",
         tournament_name,
-        TOURNAMENT_COUNTRY,
+        tournament_country,
         tournament_id,
     )
 
@@ -118,6 +130,7 @@ def upsert_tournament_source_mapping(
     source_tournament_name: str,
 ) -> None:
     """Ensure the source tournament mapping exists."""
+
     connection.execute(
         """
         INSERT INTO tournament_source_mappings (
@@ -151,13 +164,16 @@ def get_or_create_competition_stage(
     """
     Return the canonical stage ID for one tournament.
 
-    Stage is nullable because the scraper may not yet identify every
-    historical competition stage.
+    Stage is nullable because the scraper may not yet
+    identify every historical competition stage.
     """
+
     if stage_name is None:
         return None
 
-    cleaned_stage_name = stage_name.strip()
+    cleaned_stage_name = (
+        stage_name.strip()
+    )
 
     if not cleaned_stage_name:
         return None
@@ -197,7 +213,8 @@ def get_or_create_competition_stage(
     )
 
     LOGGER.info(
-        "Created competition stage: tournament_id=%s / %s "
+        "Created competition stage: "
+        "tournament_id=%s / %s "
         "-> competition_stage_id %s",
         tournament_id,
         cleaned_stage_name,
@@ -214,17 +231,17 @@ def add_competition_metadata(
 ) -> list[dict[str, Any]]:
     """
     Attach tournament/stage IDs to mapped fixture records.
-
-    The fixture scraper can optionally provide:
-        competition_stage_name
-
-    Until the scraper identifies historical stages, stage remains NULL rather
-    than incorrectly labelling playoff matches as regular season.
     """
-    stage_ids: dict[str, int] = {}
+
+    stage_ids: dict[
+        str,
+        int,
+    ] = {}
 
     for match in mapped_matches:
-        match["tournament_id"] = tournament_id
+        match["tournament_id"] = (
+            tournament_id
+        )
 
         stage_name_raw = match.get(
             "competition_stage_name"
@@ -237,25 +254,33 @@ def add_competition_metadata(
         )
 
         if stage_name is None:
-            match["competition_stage_id"] = None
+            match[
+                "competition_stage_id"
+            ] = None
             continue
 
         if stage_name not in stage_ids:
-            stage_id = get_or_create_competition_stage(
-                connection=connection,
-                tournament_id=tournament_id,
-                stage_name=stage_name,
+            stage_id = (
+                get_or_create_competition_stage(
+                    connection=connection,
+                    tournament_id=tournament_id,
+                    stage_name=stage_name,
+                )
             )
 
             if stage_id is None:
-                match["competition_stage_id"] = None
+                match[
+                    "competition_stage_id"
+                ] = None
                 continue
 
-            stage_ids[stage_name] = stage_id
+            stage_ids[
+                stage_name
+            ] = stage_id
 
-        match["competition_stage_id"] = (
-            stage_ids[stage_name]
-        )
+        match[
+            "competition_stage_id"
+        ] = stage_ids[stage_name]
 
     return mapped_matches
 
@@ -266,18 +291,25 @@ def update_team_tournaments(
     tournament_id: int,
 ) -> None:
     """
-    Set each participating team's current recognised tournament.
+    Set each participating team's current recognised
+    tournament.
 
-    This represents current/most recently observed league membership rather
-    than a full historical membership record.
+    This represents current/most recently observed league
+    membership rather than a full historical membership
+    record.
     """
+
     team_ids = {
-        int(match["home_team_id"])
+        int(
+            match["home_team_id"]
+        )
         for match in mapped_matches
     }
 
     team_ids.update(
-        int(match["away_team_id"])
+        int(
+            match["away_team_id"]
+        )
         for match in mapped_matches
     )
 
@@ -293,7 +325,9 @@ def update_team_tournaments(
                 tournament_id,
                 team_id,
             )
-            for team_id in sorted(team_ids)
+            for team_id in sorted(
+                team_ids
+            )
         ],
     )
 
@@ -304,29 +338,75 @@ def prepare_fixtures(
     """
     Select only the fields stored in the fixtures table.
 
-    Fixtures contains every scheduled league match, including matches
-    which have already been completed. Scores are deliberately omitted.
+    Fixtures contains every scheduled league match,
+    including matches which have already been completed.
+    Scores are deliberately omitted.
     """
+
     records = [
         {
-            "fixture_id": build_fixture_id(
-                match_date=match["match_date"],
-                home_team_id=match["home_team_id"],
-                away_team_id=match["away_team_id"],
+            "fixture_id": (
+                build_fixture_id(
+                    match_date=(
+                        match[
+                            "match_date"
+                        ]
+                    ),
+                    home_team_id=(
+                        match[
+                            "home_team_id"
+                        ]
+                    ),
+                    away_team_id=(
+                        match[
+                            "away_team_id"
+                        ]
+                    ),
+                )
             ),
-            "season": match["season"],
-            "tournament_id": match["tournament_id"],
-            "competition_stage_id": match.get(
-                "competition_stage_id"
+            "season": (
+                match["season"]
             ),
-            "match_date": match["match_date"],
-            "kick_off": match["kick_off"],
-            "home_team_id": match["home_team_id"],
-            "away_team_id": match["away_team_id"],
-            "referee": match["referee"],
-            "venue": match["venue"],
-            "source_name": match["source_name"],
-            "source_match_id": match["source_match_id"],
+            "tournament_id": (
+                match[
+                    "tournament_id"
+                ]
+            ),
+            "competition_stage_id": (
+                match.get(
+                    "competition_stage_id"
+                )
+            ),
+            "match_date": (
+                match["match_date"]
+            ),
+            "kick_off": (
+                match["kick_off"]
+            ),
+            "home_team_id": (
+                match[
+                    "home_team_id"
+                ]
+            ),
+            "away_team_id": (
+                match[
+                    "away_team_id"
+                ]
+            ),
+            "referee": (
+                match["referee"]
+            ),
+            "venue": (
+                match["venue"]
+            ),
+            "source_name": (
+                match["source_name"]
+            ),
+            "source_match_id": (
+                match[
+                    "source_match_id"
+                ]
+            ),
         }
         for match in mapped_matches
     ]
@@ -341,6 +421,7 @@ def upsert_fixtures(
     fixtures: pd.DataFrame,
 ) -> int:
     """Insert or update fixtures in SQLite."""
+
     if fixtures.empty:
         return 0
 
@@ -387,53 +468,87 @@ def upsert_fixtures(
 def ingest_season(
     connection: sqlite3.Connection,
     season: int,
+    competition: str,
 ) -> int:
     """
-    Scrape and store every Super League fixture for one season.
-
-    Both completed matches and future scheduled matches are included.
+    Scrape and store all fixtures for one competition
+    and season.
     """
+
+    config = get_competition_config(
+        competition
+    )
+
+    tournament_name = (
+        config["tournament_name"]
+    )
+
+    tournament_country = (
+        config["country"]
+    )
+
     matches = scrape_season_matches(
         season=season,
+        competition=competition,
     )
 
     LOGGER.info(
-        "Season %s: scraped %s tournament fixtures",
+        "Season %s: scraped %s %s fixtures",
         season,
         len(matches),
+        tournament_name,
     )
 
     if not matches:
         LOGGER.warning(
-            "Season %s: no fixtures found",
+            "Season %s: no %s fixtures found",
             season,
+            tournament_name,
         )
+
         return 0
 
-    tournament_names = {
-        str(match["tournament_name"])
+    returned_tournaments = {
+        str(
+            match[
+                "tournament_name"
+            ]
+        )
         for match in matches
     }
 
-    if len(tournament_names) != 1:
+    expected_tournaments = {
+        tournament_name
+    }
+
+    if (
+        returned_tournaments
+        != expected_tournaments
+    ):
         raise RuntimeError(
-            "Expected one tournament per season scrape, "
-            f"found: {sorted(tournament_names)}"
+            f"Expected {tournament_name}, "
+            f"found "
+            f"{sorted(returned_tournaments)}"
         )
 
-    tournament_name = next(
-        iter(tournament_names)
-    )
-
-    tournament_id = get_or_create_tournament(
-        connection=connection,
-        tournament_name=tournament_name,
+    tournament_id = (
+        get_or_create_tournament(
+            connection=connection,
+            tournament_name=(
+                tournament_name
+            ),
+            tournament_country=(
+                tournament_country
+            ),
+        )
     )
 
     upsert_tournament_source_mapping(
         connection=connection,
         tournament_id=tournament_id,
-        source_tournament_name=tournament_name,
+        source_tournament_name=(
+            tournament_name
+        ),
     )
 
     mapped_matches = apply_team_ids(
@@ -442,15 +557,24 @@ def ingest_season(
         create_missing=True,
     )
 
-    # Apply verified RLP date corrections BEFORE fixture_id is constructed.
-    mapped_matches = apply_fixture_date_corrections(
-        matches=mapped_matches,
+    # Apply verified RLP date corrections BEFORE
+    # fixture_id is constructed.
+    mapped_matches = (
+        apply_fixture_date_corrections(
+            matches=mapped_matches,
         )
+    )
 
-    mapped_matches = add_competition_metadata(
-        connection=connection,
-        mapped_matches=mapped_matches,
-        tournament_id=tournament_id,
+    mapped_matches = (
+        add_competition_metadata(
+            connection=connection,
+            mapped_matches=(
+                mapped_matches
+            ),
+            tournament_id=(
+                tournament_id
+            ),
+        )
     )
 
     update_team_tournaments(
@@ -469,9 +593,11 @@ def ingest_season(
     )
 
     LOGGER.info(
-        "Season %s: inserted or updated %s fixtures",
+        "Season %s: inserted or updated "
+        "%s %s fixtures",
         season,
         fixture_count,
+        tournament_name,
     )
 
     return fixture_count
@@ -480,6 +606,8 @@ def ingest_season(
 def validate_database(
     connection: sqlite3.Connection,
 ) -> None:
+    """Check that required database tables exist."""
+
     required_tables = {
         "fixtures",
         "teams",
@@ -509,7 +637,8 @@ def validate_database(
 
     if missing_tables:
         raise RuntimeError(
-            "Database is missing required tables: "
+            "Database is missing required "
+            "tables: "
             f"{sorted(missing_tables)}"
         )
 
@@ -517,8 +646,9 @@ def validate_database(
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Ingest all scheduled Super League fixtures "
-            "from Rugby League Project into SQLite."
+            "Ingest scheduled rugby league "
+            "fixtures from Rugby League Project "
+            "into SQLite."
         )
     )
 
@@ -526,14 +656,33 @@ def parse_arguments() -> argparse.Namespace:
         "--start-season",
         type=int,
         required=True,
-        help="First season to ingest, for example 2025.",
+        help=(
+            "First season to ingest, "
+            "for example 2024."
+        ),
     )
 
     parser.add_argument(
         "--end-season",
         type=int,
         required=True,
-        help="Final season to ingest, for example 2026.",
+        help=(
+            "Final season to ingest, "
+            "for example 2026."
+        ),
+    )
+
+    parser.add_argument(
+        "--competition",
+        choices=[
+            "super_league",
+            "nrl",
+        ],
+        default="super_league",
+        help=(
+            "Competition to ingest. "
+            "Defaults to super_league."
+        ),
     )
 
     return parser.parse_args()
@@ -542,10 +691,22 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> None:
     args = parse_arguments()
 
-    if args.start_season > args.end_season:
+    if (
+        args.start_season
+        > args.end_season
+    ):
         raise ValueError(
-            "--start-season cannot be later than --end-season"
+            "--start-season cannot be later "
+            "than --end-season"
         )
+
+    config = get_competition_config(
+        args.competition
+    )
+
+    tournament_name = (
+        config["tournament_name"]
+    )
 
     total_ingested = 0
 
@@ -563,17 +724,28 @@ def main() -> None:
             args.end_season + 1,
         ):
             try:
-                fixture_count = ingest_season(
-                    connection=connection,
-                    season=season,
+                fixture_count = (
+                    ingest_season(
+                        connection=(
+                            connection
+                        ),
+                        season=season,
+                        competition=(
+                            args.competition
+                        ),
+                    )
                 )
 
                 connection.commit()
 
-                total_ingested += fixture_count
+                total_ingested += (
+                    fixture_count
+                )
 
                 LOGGER.info(
-                    "Season %s committed successfully.",
+                    "%s season %s "
+                    "committed successfully.",
+                    tournament_name,
                     season,
                 )
 
@@ -581,16 +753,19 @@ def main() -> None:
                 connection.rollback()
 
                 LOGGER.exception(
-                    "Season %s failed. "
+                    "%s season %s failed. "
                     "Rolled back this season only.",
+                    tournament_name,
                     season,
                 )
 
                 raise
 
     LOGGER.info(
-        "Finished. Inserted or updated %s fixtures from %s.",
+        "Finished. Inserted or updated "
+        "%s %s fixtures from %s.",
         total_ingested,
+        tournament_name,
         SOURCE_NAME,
     )
 
@@ -598,7 +773,9 @@ def main() -> None:
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
-        format="%(levelname)s | %(message)s",
+        format=(
+            "%(levelname)s | %(message)s"
+        ),
     )
 
     main()
